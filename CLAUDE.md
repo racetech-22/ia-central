@@ -4,7 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del proyecto
 
-Este repositorio está en fase de definición de arquitectura (Fase 0-1 de la hoja de ruta, ver ARQUITECTURA.md §5). Todavía **no existe código** (sin Django, sin `docker-compose.yml`, sin `requirements.txt`): solo documentación fuente de verdad. No inventes comandos de build/lint/test — no existen todavía. Cuando se agregue código real (proyecto Django, MCP servers, etc.), esta sección debe actualizarse con los comandos concretos (`manage.py`, migraciones, tests, docker compose).
+Skeleton de Django creado (arranque de Fase 2 de la hoja de ruta, ver ARQUITECTURA.md §5): proyecto `core/` funcional, empaquetado con Docker, corriendo contra Postgres. Todavía no hay apps propias en `apps/` ni conectores en `mcp_servers/` (eso es Fase 3). No hay entorno virtual local ni Django instalado fuera de Docker — todo el desarrollo se hace vía `docker compose`.
+
+### Comandos comunes
+
+```bash
+cp .env.example .env          # solo la primera vez; completar SECRET_KEY/POSTGRES_PASSWORD reales
+docker compose build web      # reconstruir la imagen tras cambiar requirements.txt
+docker compose up             # levantar db + web (http://localhost:8000)
+docker compose run --rm web python manage.py migrate
+docker compose run --rm web python manage.py makemigrations
+docker compose run --rm web python manage.py createsuperuser
+docker compose run --rm web python manage.py check
+docker compose run --rm web python manage.py test              # cuando existan tests
+docker compose down           # bajar los contenedores (los datos persisten en el volumen postgres_data)
+```
+
+No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
 
 ## Qué es IA CENTRAL
 

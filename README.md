@@ -38,4 +38,11 @@ Este repositorio es la fuente de verdad versionada. Además, cada vez que ARQUIT
 
 ## Estado actual
 
-Proyecto en fase de definición de arquitectura. Ver CHANGELOG.md para el detalle de avances.
+Skeleton de Django creado y funcionando sobre Docker (Fase 2 en marcha). Ver CHANGELOG.md para el detalle de avances.
+
+## Cómo correrlo en local
+
+    cp .env.example .env      # completar SECRET_KEY/POSTGRES_PASSWORD reales
+    docker compose up
+
+La app queda disponible en http://localhost:8000. Ver CLAUDE.md para el resto de comandos comunes (migraciones, tests, superusuario).
