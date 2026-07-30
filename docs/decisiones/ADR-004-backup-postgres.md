@@ -11,6 +11,14 @@ Al revisar el VPS no había ningún backup a nivel de base de datos: ni cron, ni
 
 Se agrega `scripts/backup_postgres.sh`, que corre `pg_dump` dentro del contenedor `db` (leyendo `POSTGRES_USER`/`POSTGRES_DB` del propio entorno del contenedor, no parseando `.env` en bash, porque `SECRET_KEY`/`POSTGRES_PASSWORD` pueden traer caracteres especiales de shell), comprime el resultado con `gzip` y lo guarda con timestamp en `/home/fernando/backups/postgres/` (fuera del repositorio). Se programa vía `crontab` del usuario `fernando` (no root, no necesita sudo porque `fernando` está en el grupo `docker`) todos los días a las 03:00, con retención de 14 días (los dumps más viejos se borran automáticamente).
 
+El script es auto-verificable: cada corrida deja una línea grepeable en `backup.log` (`BACKUP_STATUS=OK|FAILED`, y `RCLONE_STATUS=OK|FAILED|SKIPPED` para el sync de ADR-005) y termina con un código de salida distinto según qué falló:
+
+- `0`: todo OK (backup local + sync remoto).
+- `1`: falló el backup local (`pg_dump`/`gzip`) o algo inesperado — **crítico**, no hay backup de ese día.
+- `2`: el backup local quedó bien pero el sync a Drive falló — degradado, el dato ya está a salvo localmente, no crítico.
+
+La limpieza de retención (`find ... -delete`) está deliberadamente excluida de esta lógica de fallo: si no puede borrar un dump viejo, se loguea un `WARNING` pero no se marca todo el backup como fallido. Probado manualmente forzando cada uno de los tres casos (parando `db`, apuntando a un remoto de rclone inexistente, corrida normal) para confirmar que el código de salida y la línea de log son los esperados en cada uno.
+
 ## Alternativas descartadas
 
 - **Confiar solo en el Auto Backup de Contabo**: no verificable desde el VPS, no necesariamente consistente a nivel de aplicación, y ata la recuperación a un único proveedor/mecanismo. Descartado como única capa, se mantiene como respaldo adicional a nivel de VM.
