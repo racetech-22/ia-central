@@ -25,7 +25,7 @@ docker compose down           # bajar los contenedores (los datos persisten en e
 
 En el VPS de producción, `.env` (no versionado) tiene `DJANGO_DEBUG=False` y valores reales de `DJANGO_SECRET_KEY`/`POSTGRES_PASSWORD` — nunca copiar `.env.example` tal cual encima del `.env` de producción.
 
-`scripts/backup_postgres.sh` corre diario por cron (usuario `fernando`, ver ADR-004) y deja dumps en `/home/fernando/backups/postgres/` (fuera del repo). Para correrlo a mano o restaurar, ver ADR-004.
+`scripts/backup_postgres.sh` corre diario por cron (usuario `fernando`, ver ADR-004) y deja dumps en `/home/fernando/backups/postgres/` (fuera del repo). Para correrlo a mano o restaurar, ver ADR-004. También sincroniza cada dump a Google Drive vía `rclone` — implementación **interina**, ver ADR-005 (a reemplazar cuando exista el panel administrativo de Fase 5).
 
 No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
 

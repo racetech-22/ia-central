@@ -35,11 +35,13 @@ Los conectores que le dan al agente poder real sobre el mundo:
 - Empaquetado: Docker + Docker Compose para todo el stack, de forma que migrar de servidor sea un docker compose up más restore de datos.
 - Repositorio: GitHub privado, clonado igual en el VPS y en la máquina local de Fernando (mismo contenido, sincronizado por Git). Ver ADR-002.
 - Borde HTTPS: Nginx + Certbot corren directamente en el sistema operativo del VPS (fuera de Docker), como excepción puntual al empaquetado Docker de todo lo demás, por consistencia con los otros servidores de Fernando. Nginx hace de reverse proxy hacia el contenedor `web` (`aicentral.network` → `127.0.0.1:8000`) y Certbot gestiona el certificado TLS con renovación automática. Ver ADR-003.
-- Backup: `pg_dump` diario vía cron (usuario `fernando`, sin sudo) a `/home/fernando/backups/postgres/` con 14 días de retención, además del Auto Backup de VM de Contabo. Ver ADR-004.
+- Backup: `pg_dump` diario vía cron (usuario `fernando`, sin sudo) a `/home/fernando/backups/postgres/` con 14 días de retención, además del Auto Backup de VM de Contabo. Ver ADR-004. Copia adicional fuera del VPS vía `rclone` a Google Drive — **implementación interina**, ver ADR-005: el destino/credenciales de backup deben migrar a configuración gestionada desde el panel administrativo en Fase 5.
 
 ## 4. Panel administrativo
 
 Empieza como un dashboard ligero (artifact que consulta vía MCP: costos, modelos activos, salud de conectores). Se migra a un panel Django completo solo cuando el número de proyectos/conectores conectados lo justifique.
+
+Cuando exista el panel real, la configuración de destino/credenciales de backup (hoy: `rclone` + Google Drive fijo en script/cron, ver ADR-005) debe migrar a ser gestionada ahí, no quedar fija en el filesystem del VPS.
 
 ## 5. Hoja de ruta por fases
 
@@ -58,3 +60,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-002: Repositorio en GitHub y VPS dedicado nuevo en Contabo.
 - ADR-003: Nginx y Certbot fuera de Docker para TLS de borde (excepción puntual a ADR-002).
 - ADR-004: Backup diario de Postgres vía pg_dump.
+- ADR-005: Sync de backups a Google Drive vía rclone (interina, a reemplazar en Fase 5).
