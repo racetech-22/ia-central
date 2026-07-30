@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del proyecto
 
-Skeleton de Django creado (arranque de Fase 2 de la hoja de ruta, ver ARQUITECTURA.md §5): proyecto `core/` funcional, empaquetado con Docker, corriendo contra Postgres. Todavía no hay apps propias en `apps/` ni conectores en `mcp_servers/` (eso es Fase 3). No hay entorno virtual local ni Django instalado fuera de Docker — todo el desarrollo se hace vía `docker compose`.
+Skeleton de Django creado (arranque de Fase 2 de la hoja de ruta, ver ARQUITECTURA.md §5): proyecto `core/` funcional, empaquetado con Docker, corriendo contra Postgres. Primera app propia bajo `apps/`: `adminpanel` (branding del admin de Django + `StatusNote` como modelo mínimo de ejemplo) — el panel administrativo real de ARQUITECTURA.md §4 es Fase 5, no confundir con esta app placeholder. Todavía no hay conectores en `mcp_servers/` (eso es Fase 3). No hay entorno virtual local ni Django instalado fuera de Docker — todo el desarrollo se hace vía `docker compose`.
+
+Apps nuevas van en `apps/<nombre>/` y se registran en `INSTALLED_APPS` de `core/settings.py` como `"apps.<nombre>"` (ver `apps.adminpanel` como referencia).
 
 ### Comandos comunes
 
