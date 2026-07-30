@@ -24,6 +24,16 @@ docker compose down           # bajar los contenedores (los datos persisten en e
 
 No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
 
+### Reconectar a esta sesión de trabajo en el VPS
+
+En el VPS, el alias `iac` (definido en `~/.bashrc`) reabre o adjunta la sesión de tmux donde corre `claude --continue` dentro de `~/ia-central`:
+
+```bash
+alias iac='tmux new-session -A -s iacentral -c ~/ia-central "claude --continue"'
+```
+
+Es la forma recomendada de retomar el trabajo sin perder contexto de conversación ni tener que reexplicar el estado del proyecto.
+
 ## Qué es IA CENTRAL
 
 Un agente orquestador con memoria persistente y verificada — no un chatbot — pensado para desarrollar, administrar y modificar todos los proyectos de Fernando (locales y en varios servidores), explotando múltiples IAs (Claude, modelos vía Ollama, otras de pago) según tarea/costo/disponibilidad, y aprendiendo de sus interacciones solo cuando ese conocimiento pasa por verificación explícita.

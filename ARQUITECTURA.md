@@ -34,6 +34,7 @@ Los conectores que le dan al agente poder real sobre el mundo:
 - Especificación inicial: Cloud VPS 6, 6 vCPU, 12GB RAM, 200GB SSD NVMe, región EU, Ubuntu 24.04, Auto Backup activado.
 - Empaquetado: Docker + Docker Compose para todo el stack, de forma que migrar de servidor sea un docker compose up más restore de datos.
 - Repositorio: GitHub privado, clonado igual en el VPS y en la máquina local de Fernando (mismo contenido, sincronizado por Git). Ver ADR-002.
+- Borde HTTPS: Nginx + Certbot corren directamente en el sistema operativo del VPS (fuera de Docker), como excepción puntual al empaquetado Docker de todo lo demás, por consistencia con los otros servidores de Fernando. Nginx hace de reverse proxy hacia el contenedor `web` (`aicentral.network` → `127.0.0.1:8000`) y Certbot gestiona el certificado TLS con renovación automática. Ver ADR-003.
 
 ## 4. Panel administrativo
 
@@ -54,3 +55,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 
 - ADR-001: Arquitectura en tres capas y principio de portabilidad/verificación.
 - ADR-002: Repositorio en GitHub y VPS dedicado nuevo en Contabo.
+- ADR-003: Nginx y Certbot fuera de Docker para TLS de borde (excepción puntual a ADR-002).
