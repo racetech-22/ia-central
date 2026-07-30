@@ -19,8 +19,11 @@ docker compose run --rm web python manage.py makemigrations
 docker compose run --rm web python manage.py createsuperuser
 docker compose run --rm web python manage.py check
 docker compose run --rm web python manage.py test              # cuando existan tests
+docker compose run --rm web python manage.py collectstatic --noinput   # necesario tras cambiar estáticos; Nginx los sirve directo en prod (ver ADR-003)
 docker compose down           # bajar los contenedores (los datos persisten en el volumen postgres_data)
 ```
+
+En el VPS de producción, `.env` (no versionado) tiene `DJANGO_DEBUG=False` y valores reales de `DJANGO_SECRET_KEY`/`POSTGRES_PASSWORD` — nunca copiar `.env.example` tal cual encima del `.env` de producción.
 
 No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
 
