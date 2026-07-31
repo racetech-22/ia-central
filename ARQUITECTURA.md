@@ -36,6 +36,7 @@ Los conectores que le dan al agente poder real sobre el mundo:
 - Repositorio: GitHub privado, clonado igual en el VPS y en la máquina local de Fernando (mismo contenido, sincronizado por Git). Ver ADR-002.
 - Borde HTTPS: Nginx + Certbot corren directamente en el sistema operativo del VPS (fuera de Docker), como excepción puntual al empaquetado Docker de todo lo demás, por consistencia con los otros servidores de Fernando. Nginx hace de reverse proxy hacia el contenedor `web` (`aicentral.network` → `127.0.0.1:8000`) y Certbot gestiona el certificado TLS con renovación automática. Ver ADR-003.
 - Backup: `pg_dump` diario vía cron (usuario `fernando`, sin sudo) a `/home/fernando/backups/postgres/` con 14 días de retención, además del Auto Backup de VM de Contabo. Ver ADR-004. Copia adicional fuera del VPS vía `rclone` a Google Drive — **implementación interina**, ver ADR-005: el destino/credenciales de backup deben migrar a configuración gestionada desde el panel administrativo en Fase 5.
+- Sync de documentación: GitHub Action (`.github/workflows/sync-drive.yml`) que en cada push a `master` sube README.md/CLAUDE.md/ARQUITECTURA.md/CHANGELOG.md/`docs/**` a la carpeta de Drive `ia-central-backups`, autenticado con OAuth2 de la cuenta personal (no cuenta de servicio, ver justificación en ADR-010). Ver ADR-010.
 
 ## 4. Panel administrativo
 
@@ -65,3 +66,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-007: Hook `PreToolUse` que bloquea de forma determinista comandos destructivos contra la base de datos (`docker compose down -v`, `docker volume rm/prune` del volumen de Postgres, `DROP DATABASE`/`DROP TABLE`, `rm` sobre la carpeta de backups).
 - ADR-008: Cron mensual (sistema, no rutina de sesión) que corre `claude -p` de solo lectura para auditar la auto-memoria del proyecto.
 - ADR-009: El agente de Cowork no puede alcanzar la red del VPS (sandbox con allowlist de dominios) — confirma que la ejecución autónoma de Fase 3 debe vivir como proceso nativo en el VPS, no como acceso remoto desde Cowork.
+- ADR-010: Sync automático de la documentación a Google Drive vía GitHub Actions, con OAuth2 de cuenta personal en vez de cuenta de servicio (sin cuota de almacenamiento propia sin Google Workspace).
