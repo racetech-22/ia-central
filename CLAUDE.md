@@ -25,9 +25,16 @@ docker compose down           # bajar los contenedores (los datos persisten en e
 
 En el VPS de producción, `.env` (no versionado) tiene `DJANGO_DEBUG=False` y valores reales de `DJANGO_SECRET_KEY`/`POSTGRES_PASSWORD` — nunca copiar `.env.example` tal cual encima del `.env` de producción.
 
-`scripts/backup_postgres.sh` corre diario por cron (usuario `fernando`, ver ADR-004) y deja dumps en `/home/fernando/backups/postgres/` (fuera del repo). Para correrlo a mano o restaurar, ver ADR-004. También sincroniza cada dump a Google Drive vía `rclone` — implementación **interina**, ver ADR-005 (a reemplazar cuando exista el panel administrativo de Fase 5).
-
 No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
+
+### Rutina de mantenimiento (cron del sistema, no rutinas de sesión)
+
+Ambos jobs son cron del sistema operativo (`crontab -l` del usuario `fernando`, sin sudo) — a propósito, no rutinas de sesión de Claude Code (`CronCreate`), que se pierden en cuanto termina la sesión que las creó.
+
+- **Diario, 03:00** — `scripts/backup_postgres.sh` (ver ADR-004): `pg_dump` + gzip a `/home/fernando/backups/postgres/` (fuera del repo, 14 días de retención) y sync a Google Drive vía `rclone` (implementación **interina**, ver ADR-005 — a reemplazar cuando exista el panel administrativo de Fase 5). Deja marcas `BACKUP_STATUS=OK|FAILED` / `RCLONE_STATUS=OK|FAILED|SKIPPED` en `backup.log`, exit code 0/1/2 según qué falló.
+- **Mensual, día 1 a las 04:15** — `scripts/memory_audit.sh`: corre `claude -p` en modo no interactivo (`--allowedTools "Read,Glob,Grep"`, sin permiso de escritura — solo lee, nunca modifica ni borra memoria) pidiéndole que revise la auto-memoria de este proyecto (qué hay guardado, si algo está duplicado o desactualizado respecto al repo) y deja el resultado en `/home/fernando/memory-audit.log`, con `AUDIT_STATUS=OK|FAILED` al final de cada corrida.
+
+Para correr cualquiera de los dos a mano: `bash scripts/backup_postgres.sh` o `bash scripts/memory_audit.sh` desde la raíz del repo.
 
 ### Reconectar a esta sesión de trabajo en el VPS
 
