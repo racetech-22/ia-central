@@ -61,3 +61,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-003: Nginx y Certbot fuera de Docker para TLS de borde (excepción puntual a ADR-002).
 - ADR-004: Backup diario de Postgres vía pg_dump.
 - ADR-005: Sync de backups a Google Drive vía rclone (interina, a reemplazar en Fase 5).
+- ADR-006: Límites del `deny` por patrón de comando en `.claude/settings.json` — no es hermético, la defensa real hoy es el acceso SSH restringido a Fernando.
