@@ -20,12 +20,12 @@ import os
 import mimetypes
 from pathlib import Path
 
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-KEY_FILE = os.environ["GDRIVE_SA_KEY_FILE"]
 ROOT_FOLDER_ID = os.environ["GDRIVE_FOLDER_ID"]
 
 ROOT_FILES = ["README.md", "CLAUDE.md", "ARQUITECTURA.md", "CHANGELOG.md"]
@@ -40,7 +40,15 @@ EXTRA_MIME_TYPES = {
     ".json": "application/json",
 }
 
-creds = service_account.Credentials.from_service_account_file(KEY_FILE, scopes=SCOPES)
+creds = Credentials(
+    token=None,
+    refresh_token=os.environ["GDRIVE_REFRESH_TOKEN"],
+    token_uri="https://oauth2.googleapis.com/token",
+    client_id=os.environ["GDRIVE_CLIENT_ID"],
+    client_secret=os.environ["GDRIVE_CLIENT_SECRET"],
+    scopes=SCOPES,
+)
+creds.refresh(Request())
 drive = build("drive", "v3", credentials=creds)
 
 _folder_cache = {}
