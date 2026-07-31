@@ -39,6 +39,42 @@ alias iac='tmux new-session -A -s iacentral -c ~/ia-central "claude --continue"'
 
 Es la forma recomendada de retomar el trabajo sin perder contexto de conversación ni tener que reexplicar el estado del proyecto.
 
+### Permisos de Claude Code en este repo (`.claude/settings.json`)
+
+Este archivo está versionado (a diferencia de `.claude/settings.local.json`, que es personal y no se sube) y define qué puede hacer Claude Code sin pedir confirmación, qué necesita confirmación siempre, y qué tiene bloqueado de forma dura:
+
+```json
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": ["Bash(docker compose *)", "Bash(docker volume ls)", "Bash(git status)", "Bash(git diff *)", "Bash(git commit -m *)"],
+    "ask": ["Bash(git push *)"],
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Bash(cat *.env*)"]
+  }
+}
+```
+
+- **`$schema`**: solo referencia para autocompletar/validar en el editor, no tiene efecto en tiempo de ejecución.
+- **`allow`**: operaciones que corren sin pedir permiso cada vez.
+  - `Bash(docker compose *)`: cualquier subcomando de `docker compose` (`up`, `build`, `run`, `exec`, `logs`, `down`, etc.) sin preguntar.
+  - `Bash(docker volume ls)`: match exacto, solo listar volúmenes (no `docker volume rm` ni otros subcomandos).
+  - `Bash(git status)`: match exacto.
+  - `Bash(git diff *)`: `git diff` con cualquier argumento.
+  - `Bash(git commit -m *)`: crear commits con mensaje sin preguntar. Ojo: esto **no** cubre `git add` (sigue pidiendo permiso aparte) ni `git push`.
+- **`ask`**: siempre pide confirmación, sin importar otras reglas.
+  - `Bash(git push *)`: todo push (a cualquier rama/remoto) requiere confirmación explícita cada vez.
+- **`deny`**: bloqueo duro — Claude no puede ejecutar esto ni con confirmación del usuario.
+  - `Read(./.env)` / `Read(./.env.*)`: la tool `Read` no puede abrir `.env` ni variantes (`.env.local`, `.env.production`, etc.). Ojo: `.env.example` también matchea `.env.*` y queda bloqueado para `Read`, aunque solo tiene placeholders — no es un problema de seguridad, pero puede ser molesto si hace falta inspeccionarlo (usar `git show HEAD:.env.example` como alternativa).
+  - `Bash(cat *.env*)`: bloquea específicamente el comando `cat` sobre rutas que contengan `.env`.
+
+**Verificado el 2026-07-31 intentando leer los secretos reales** (ver también CHANGELOG.md):
+- `Read` sobre `.env` → bloqueado correctamente ("File is in a directory that is denied by your permission settings").
+- `Bash: cat .env` → bloqueado correctamente.
+- `Bash: head -1 .env` → también bloqueado.
+- **`Bash: python3 -c "print(open('.env').read())"` → NO bloqueado, imprimió el contenido real completo** (`DJANGO_SECRET_KEY` y `POSTGRES_PASSWORD` reales quedaron expuestos en la conversación de esa verificación).
+
+Conclusión importante: las reglas `deny` de tipo `Bash(cat *.env*)` bloquean patrones de comando literales, no el acceso al archivo en sí — cualquier otra forma de leerlo por shell (`python3`, `node`, `less`, `grep`, `awk`, etc.) que no matchee ese patrón exacto puede saltárselo. El bloqueo verdaderamente "imposible" (a nivel de sandbox de filesystem, no de patrón de comando) requeriría `sandbox.credentials.files` con `mode: "deny"` y `sandbox.enabled: true` — pero esta VPS no tiene `bwrap` (bubblewrap) instalado, que es requisito para el sandbox de filesystem en Linux, así que esa vía no está disponible sin instalarlo primero. Por ahora, `deny` en este archivo es una mitigación parcial (bloquea la tool `Read` por completo, y el intento más obvio por Bash), no una garantía absoluta contra todo comando de shell posible.
+
 ## Qué es IA CENTRAL
 
 Un agente orquestador con memoria persistente y verificada — no un chatbot — pensado para desarrollar, administrar y modificar todos los proyectos de Fernando (locales y en varios servidores), explotando múltiples IAs (Claude, modelos vía Ollama, otras de pago) según tarea/costo/disponibilidad, y aprendiendo de sus interacciones solo cuando ese conocimiento pasa por verificación explícita.

@@ -24,3 +24,5 @@ Thumbs.db
 *.pem
 *.key
 id_ed25519*
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
