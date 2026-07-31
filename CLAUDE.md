@@ -75,6 +75,17 @@ Este archivo está versionado (a diferencia de `.claude/settings.local.json`, qu
 
 Conclusión importante (documentada en detalle en ADR-006): las reglas `deny` de tipo `Bash(cat *.env*)` bloquean patrones de comando literales, no el acceso al archivo en sí — cualquier otra forma de leerlo por shell (`python3`, `node`, `less`, `grep`, `awk`, etc.) que no matchee ese patrón exacto puede saltárselo. El bloqueo verdaderamente "imposible" (a nivel de sandbox de filesystem, no de patrón de comando) requeriría `sandbox.credentials.files` con `mode: "deny"` y `sandbox.enabled: true` — pero esta VPS no tiene `bwrap` (bubblewrap) instalado, que es requisito para el sandbox de filesystem en Linux, así que esa vía no está disponible sin instalarlo primero. Por ahora, `deny` en este archivo es una mitigación parcial (bloquea la tool `Read` por completo, y el intento más obvio por Bash), no una garantía absoluta contra todo comando de shell posible — la defensa real hoy es que solo Fernando tiene acceso SSH a este VPS.
 
+### Hook `PreToolUse` contra comandos destructivos (`.claude/hooks/block-destructive-db.sh`)
+
+`.claude/settings.json` también registra un hook `PreToolUse` (matcher `Bash`) que corre `.claude/hooks/block-destructive-db.sh` antes de cada comando Bash. A diferencia del `deny` de arriba, esto sí es un bloqueo determinista de verdad (exit 2 aborta el tool call) — ver ADR-007. Bloquea:
+
+- `docker compose down` con `-v`/`--volumes` (borra el volumen de Postgres).
+- `docker volume rm`/`docker volume prune` mencionando el volumen de Postgres (`ia-central_postgres_data`/`postgres_data`).
+- `DROP DATABASE` / `DROP TABLE` en cualquier parte del comando.
+- `rm` apuntando a `/home/fernando/backups` (o `~/backups`).
+
+Probado con casos sintéticos (pipe directo al script) y en vivo con tool calls reales de Bash (`docker volume rm ia-central_postgres_data` y `docker compose down -v`, ambos abortados antes de ejecutarse). Como con ADR-006, la lista de patrones no es exhaustiva por diseño — si aparece una nueva forma de borrar el volumen o la base, hay que agregar la regla al script.
+
 ## Qué es IA CENTRAL
 
 Un agente orquestador con memoria persistente y verificada — no un chatbot — pensado para desarrollar, administrar y modificar todos los proyectos de Fernando (locales y en varios servidores), explotando múltiples IAs (Claude, modelos vía Ollama, otras de pago) según tarea/costo/disponibilidad, y aprendiendo de sus interacciones solo cuando ese conocimiento pasa por verificación explícita.

@@ -4,5 +4,19 @@
     "allow": ["Bash(docker compose *)", "Bash(docker volume ls)", "Bash(git status)", "Bash(git diff *)", "Bash(git commit -m *)"],
     "ask": ["Bash(git push *)"],
     "deny": ["Read(./.env)", "Read(./.env.*)", "Bash(cat *.env*)"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-destructive-db.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

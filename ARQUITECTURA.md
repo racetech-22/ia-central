@@ -62,3 +62,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-004: Backup diario de Postgres vía pg_dump.
 - ADR-005: Sync de backups a Google Drive vía rclone (interina, a reemplazar en Fase 5).
 - ADR-006: Límites del `deny` por patrón de comando en `.claude/settings.json` — no es hermético, la defensa real hoy es el acceso SSH restringido a Fernando.
+- ADR-007: Hook `PreToolUse` que bloquea de forma determinista comandos destructivos contra la base de datos (`docker compose down -v`, `docker volume rm/prune` del volumen de Postgres, `DROP DATABASE`/`DROP TABLE`, `rm` sobre la carpeta de backups).
