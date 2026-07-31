@@ -117,3 +117,7 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 - `CHANGELOG.md` registra en orden cronológico todas las decisiones y avances relevantes.
 - Cuando cambies ARQUITECTURA.md o agregues/edites una ADR, también hay que actualizar CHANGELOG.md en el mismo cambio, y recordarle a Fernando que debe subir la versión vigente a los archivos del proyecto "IA CENTRAL" en Claude para que conversaciones futuras arranquen con el contexto completo.
 - No dupliques contenido entre README.md, ARQUITECTURA.md y las ADRs: el README es el punto de entrada, ARQUITECTURA.md es la fuente de verdad completa, y las ADRs contienen el razonamiento detrás de cada decisión puntual.
+
+## Memoria entre sesiones
+
+Al cerrar cada tarea o fase de trabajo, evalúa brevemente si algo de lo ocurrido (una preferencia expresada, un límite operativo descubierto) vale la pena guardar en memoria antes de seguir — no esperes a que se pida explícitamente con `/memory`.
