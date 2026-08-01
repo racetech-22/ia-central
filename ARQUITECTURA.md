@@ -18,6 +18,8 @@ El agente que decide qué hacer y a qué IA/herramienta delegar cada tarea, corr
 
 El LLM que corre en el orquestador nunca tiene shell arbitrario. Toda capacidad sobre la infraestructura (migraciones, reinicio de servicios, lectura de archivos, git) se expone como tools MCP discretas y nombradas, implementadas como código determinista en `mcp_servers/` — la lista de tools disponibles ES la política de seguridad del agente autónomo, a diferencia de Claude Code (sesión `iac`, supervisada por Fernando), que sí tiene shell completo bajo `.claude/settings.json` y el hook de ADR-007. Ver ADR-015.
 
+Para autenticar (ver ADR-016), el contenedor del orquestador monta el credencial de suscripción de `~/.claude/.credentials.json` en solo lectura, corriendo con el UID del propietario del archivo en el host. Esto queda condicionado a que ninguna tool MCP permita lectura de rutas arbitrarias del filesystem — el credencial es entorno de ejecución del proceso, no una capacidad invocable por el agente. Si esa condición deja de cumplirse, la decisión queda invalidada y hay que pasar a clave de API dedicada. Ver ADR-017.
+
 ### Capa de conocimiento
 Memoria de largo plazo del sistema, independiente del servidor físico donde corre la orquestación. Compuesta por:
 - Base de datos vectorial para RAG (pgvector sobre Postgres, o Qdrant si se separa).
@@ -81,3 +83,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-014: Auditoría semanal (`claude -p` de solo lectura, cron del sistema, domingos 04:45) que verifica que las ADR digan la verdad sobre el estado real del repo. Establece la convención de marcar como pendiente (con fase) toda afirmación sobre algo no implementado todavía.
 - ADR-015: El orquestador corre como servicio de `docker-compose.yml` (no systemd ni tmux). El LLM nunca tiene shell arbitrario — toda capacidad se expone como tools MCP discretas y nombradas; la lista de tools es la política de seguridad.
 - ADR-016: Fase 3 arranca con autenticación por suscripción, no con clave de API — el gateway LiteLLM de ADR-012 queda montado pero fuera del camino real de las llamadas a Claude mientras dure esta vía.
+- ADR-017: El orquestador autentica montando el credencial de suscripción en solo lectura con UID alineado, condicionado a que ninguna tool MCP permita lectura de rutas arbitrarias — si esa condición se rompe, la decisión queda invalidada.
