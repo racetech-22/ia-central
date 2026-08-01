@@ -114,7 +114,7 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 
 - VPS nuevo y dedicado en Contabo, exclusivo para IA CENTRAL — nunca reutilizar los VPS existentes de Fernando que ya corren otros proyectos en producción.
 - Todo el stack se empaqueta con Docker + Docker Compose, de forma que migrar de servidor sea `docker compose up` más restore de datos.
-- Repo GitHub privado (`ia-central`), clonado igual en el VPS y en la máquina local de Fernando, sincronizado por Git — es la fuente de verdad versionada.
+- Repo GitHub público (`ia-central`, era privado hasta el 2026-07-31 — ver ADR-011), clonado igual en el VPS y en la máquina local de Fernando, sincronizado por Git — es la fuente de verdad versionada.
 - Acceso a los demás servidores de Fernando: solo lectura por defecto vía MCP/SSH; no se otorga escritura sin decisión explícita.
 
 ## Cómo mantener la documentación (importante para cualquier tarea en este repo)

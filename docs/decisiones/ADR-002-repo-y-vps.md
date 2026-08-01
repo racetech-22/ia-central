@@ -9,7 +9,7 @@ Fernando ya tiene cuenta en GitHub y VPS existentes en Contabo con otros proyect
 
 ## Decisión
 
-- Repositorio: GitHub privado (ia-central), clonado tanto en el VPS de IA CENTRAL como en la máquina local de Fernando. El repo es la fuente de verdad versionada para código, ARQUITECTURA.md, ADRs y CHANGELOG.md.
+- Repositorio: GitHub privado (ia-central), clonado tanto en el VPS de IA CENTRAL como en la máquina local de Fernando. El repo es la fuente de verdad versionada para código, ARQUITECTURA.md, ADRs y CHANGELOG.md. **Nota (2026-07-31):** el repo pasó a ser público — ver ADR-011, que documenta por qué (fetch en vivo de la documentación desde `raw.githubusercontent.com`). El resto de esta decisión (VPS dedicado, GitHub como fuente de verdad) sigue vigente sin cambios.
 - VPS: uno nuevo y dedicado en Contabo, exclusivo para IA CENTRAL. No se reutiliza ninguno de los VPS existentes de Fernando.
 - Especificación contratada: Cloud VPS 6, 6 vCPU, 12GB RAM, 200GB SSD NVMe, región EU, Ubuntu 24.04, Auto Backup activado, plazo mensual.
 - Acceso futuro a los servidores existentes: cuando IA CENTRAL esté más maduro, se conectará a los proyectos que Fernando ya tiene en otros servidores mediante MCP/SSH de solo lectura por defecto, sin necesidad de migrarlos.
