@@ -11,7 +11,7 @@ Apps nuevas van en `apps/<nombre>/` y se registran en `INSTALLED_APPS` de `core/
 ### Comandos comunes
 
 ```bash
-cp .env.example .env          # solo la primera vez; completar SECRET_KEY/POSTGRES_PASSWORD reales
+cp env.example .env          # solo la primera vez; completar SECRET_KEY/POSTGRES_PASSWORD reales
 docker compose build web      # reconstruir la imagen tras cambiar requirements.txt
 docker compose up             # levantar db + web (http://localhost:8000)
 docker compose run --rm web python manage.py migrate
@@ -23,7 +23,7 @@ docker compose run --rm web python manage.py collectstatic --noinput   # necesar
 docker compose down           # bajar los contenedores (los datos persisten en el volumen postgres_data)
 ```
 
-En el VPS de producción, `.env` (no versionado) tiene `DJANGO_DEBUG=False` y valores reales de `DJANGO_SECRET_KEY`/`POSTGRES_PASSWORD` — nunca copiar `.env.example` tal cual encima del `.env` de producción.
+En el VPS de producción, `.env` (no versionado) tiene `DJANGO_DEBUG=False` y valores reales de `DJANGO_SECRET_KEY`/`POSTGRES_PASSWORD` — nunca copiar `env.example` tal cual encima del `.env` de producción.
 
 No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en requirements.txt) — si se agrega uno, actualizar esta sección con el comando exacto.
 
@@ -71,7 +71,7 @@ Este archivo está versionado (a diferencia de `.claude/settings.local.json`, qu
 - **`ask`**: siempre pide confirmación, sin importar otras reglas.
   - `Bash(git push *)`: todo push (a cualquier rama/remoto) requiere confirmación explícita cada vez.
 - **`deny`**: bloqueo duro — Claude no puede ejecutar esto ni con confirmación del usuario.
-  - `Read(./.env)` / `Read(./.env.*)`: la tool `Read` no puede abrir `.env` ni variantes (`.env.local`, `.env.production`, etc.). Ojo: `.env.example` también matchea `.env.*` y queda bloqueado para `Read`, aunque solo tiene placeholders — no es un problema de seguridad, pero puede ser molesto si hace falta inspeccionarlo (usar `git show HEAD:.env.example` como alternativa).
+  - `Read(./.env)` / `Read(./.env.*)`: la tool `Read` no puede abrir `.env` ni variantes (`.env.local`, `.env.production`, etc.). La plantilla de ejemplo se llama `env.example` (sin punto inicial, ver ADR-006) precisamente para no matchear este wildcard ni el de `Bash(cat *.env*)` — es pública (el repo es público desde ADR-011) y no tiene ningún secreto real, así que bloquear su lectura no protegía nada y solo generaba fricción.
   - `Bash(cat *.env*)`: bloquea específicamente el comando `cat` sobre rutas que contengan `.env`.
 
 **Verificado el 2026-07-31 intentando leer los secretos reales** (ver también CHANGELOG.md):

@@ -2,7 +2,7 @@
 Configuración de Django para el proyecto core (IA CENTRAL).
 
 Todos los valores sensibles o dependientes del entorno se leen de variables
-de entorno (ver .env.example) para que el mismo código corra igual en local,
+de entorno (ver env.example) para que el mismo código corra igual en local,
 en el VPS, o en cualquier servidor al que se migre el proyecto.
 """
 import os

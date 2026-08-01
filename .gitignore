@@ -15,7 +15,6 @@ media/
 staticfiles/
 .env
 .env.*
-!.env.example
 *.pid
 .vscode/
 .idea/

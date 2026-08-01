@@ -24,7 +24,7 @@ Este README es un punto de entrada. La descripción completa de la arquitectura 
     ├── docs/
     │   └── decisiones/          (ADRs, una por decisión importante)
     ├── docker-compose.yml
-    ├── .env.example
+    ├── env.example
     ├── .gitignore
     ├── requirements.txt
     ├── manage.py
@@ -42,7 +42,7 @@ Skeleton de Django creado y funcionando sobre Docker (Fase 2 en marcha). Ver CHA
 
 ## Cómo correrlo en local
 
-    cp .env.example .env      # completar SECRET_KEY/POSTGRES_PASSWORD reales
+    cp env.example .env      # completar SECRET_KEY/POSTGRES_PASSWORD reales
     docker compose up
 
 La app queda disponible en http://localhost:8000. Ver CLAUDE.md para el resto de comandos comunes (migraciones, tests, superusuario).
