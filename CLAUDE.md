@@ -124,6 +124,7 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 - `CHANGELOG.md` registra en orden cronológico todas las decisiones y avances relevantes.
 - Cuando cambies ARQUITECTURA.md o agregues/edites una ADR, también hay que actualizar CHANGELOG.md en el mismo cambio, y recordarle a Fernando que debe subir la versión vigente a los archivos del proyecto "IA CENTRAL" en Claude para que conversaciones futuras arranquen con el contexto completo.
 - No dupliques contenido entre README.md, ARQUITECTURA.md y las ADRs: el README es el punto de entrada, ARQUITECTURA.md es la fuente de verdad completa, y las ADRs contienen el razonamiento detrás de cada decisión puntual.
+- **Convención de tiempo verbal en las ADR** (ver ADR-014): el presente ("se agrega", "existe", "corre") se reserva para artefactos que ya existen en el repo en el momento de escribir la ADR — algo verificable ahí mismo. Cualquier afirmación sobre un artefacto que todavía no está implementado debe marcarse explícitamente como pendiente y con la fase que corresponde, ej. `**Pendiente (Fase 3):** agregar LiteLLM a docker-compose.yml`. Esto es lo que distingue una ADR verificable de una que afirma cosas no hechas — el problema detectado dos veces el 2026-08-01 (ADR-011 con una instrucción que nunca se agregó a CLAUDE.md, y ADR-012 con LiteLLM en `docker-compose.yml` descrito en presente sin estar implementado).
 
 ## Memoria entre sesiones
 

@@ -76,3 +76,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-011: La fuente de verdad se consulta en vivo desde GitHub (`raw.githubusercontent.com`), no vía Knowledge/Drive estático — requiere que el repo sea público.
 - ADR-012: Independencia de proveedor vía gateway LiteLLM (desde el inicio de Fase 3) y el Claude Agent SDK como capa reemplazable detrás de una interfaz interna (`orchestrator.run(...)`).
 - ADR-013: Interfaz y persistencia propias en Django/Postgres (no productos de Anthropic), diferidas a Fase 5. Fase 3/4 corren headless.
+- ADR-014: Auditoría semanal (`claude -p` de solo lectura, cron del sistema, domingos 04:45) que verifica que las ADR digan la verdad sobre el estado real del repo. Establece la convención de marcar como pendiente (con fase) toda afirmación sobre algo no implementado todavía.

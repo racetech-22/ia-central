@@ -28,7 +28,7 @@ Verificado en la documentación oficial de LiteLLM: el Claude Agent SDK puede ap
 
 ## Consecuencias
 
-- Se agrega LiteLLM como servicio nuevo en `docker-compose.yml`: una pieza más que mantener y una configuración más que versionar (mapa de modelos, claves por proveedor).
+- **Pendiente (Fase 3):** agregar LiteLLM como servicio nuevo en `docker-compose.yml` — una pieza más que mantener y una configuración más que versionar (mapa de modelos, claves por proveedor). Esta ADR decide que se hace, no que ya esté hecho; a la fecha de esta ADR, `docker-compose.yml` todavía solo define `db` y `web`.
 - Las claves de API de todos los proveedores quedan centralizadas en la config de LiteLLM. Simplifica la rotación, pero concentra secretos en un punto — aplica lo aprendido en ADR-006: la protección real hoy es el acceso SSH restringido al VPS, no la configuración.
 - **La frontera `orchestrator.run(...)` hay que sostenerla con disciplina.** Si el código de Django o los MCP servers empiezan a llamar al SDK directamente, esta decisión queda vacía sin que nadie lo note. Conviene verificarlo explícitamente en cualquier auditoría de código futura.
 - Usar modelos locales vía Ollama sigue siendo posible a través de LiteLLM para tareas baratas, pero requeriría hardware adicional para el bucle principal.
