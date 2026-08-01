@@ -25,3 +25,15 @@ Cualquier sesión de Claude que tenga acceso a herramientas de fetch web o shell
 - En sesiones sin acceso a herramientas de fetch/shell, esta estrategia no aplica: sigue haciendo falta pegar contenido a mano o activar búsqueda web en esa conversación.
 - Requiere que el repo permanezca público (o que se conecte un conector de GitHub autenticado si se revierte a privado).
 - Resuelto: rama `main` eliminada, `master` (default) ya contiene el conjunto completo.
+
+## Enmienda (2026-08-01): dos capas independientes de rezago, no una
+
+Al verificar en vivo que ADR-012 había quedado aplicado, un fetch a `https://raw.githubusercontent.com/racetech-22/ia-central/master/ARQUITECTURA.md` desde Cowork devolvió una versión desactualizada (sin ADR-010/011/012, con "GitHub privado" en §3). Investigado a fondo, hay **dos capas de caché independientes**, no una sola:
+
+a) **CDN de `raw.githubusercontent.com` (Fastly)**: `cache-control: max-age=300` — hasta 5 minutos de rezago tras un push, por diseño del CDN de GitHub. Verificado con un query param nunca antes usado (timestamp único en nanosegundos): la respuesta seguía siendo `x-cache: HIT` con `source-age` de varios minutos — **el query string no afecta la cache key en este endpoint, agregarlo no evita este rezago**. La única mitigación real para esta capa es esperar unos minutos después de pushear antes de asumir que un fetch trae lo último.
+
+b) **Caché del cliente que hace el fetch**: verificado desde Cowork que su herramienta de fetch deduplica por URL exacta dentro de una sesión (mensaje explícito de la herramienta: "Already fetched ... deduplicated for up to 900s"). Esta capa es independiente de (a) y sí se evita variando la URL — agregar `?v=<sha-del-commit>` (o cualquier valor único) fuerza una lectura nueva del lado del cliente, aunque no tenga ningún efecto sobre el CDN de GitHub.
+
+Se descartó cambiar la estrategia a `api.github.com/repos/.../contents/...` (menor TTL de caché, 60s en vez de 300s, verificado por curl desde el VPS): devuelve vacío desde el fetch de Cowork incluso con el repo público — el motivo exacto no está confirmado, pero el resultado práctico es que no sirve para el caso de uso real. Un `curl` directo sí lo resuelve, pero eso solo ayuda a sesiones que ya corren shell sobre el VPS — que ya tienen el repo clonado y no necesitan esta estrategia en absoluto.
+
+**Conclusión práctica**: la instrucción de ADR-011 se mantiene (`raw.githubusercontent.com`), pero toda sesión que la siga debe (1) agregar un parámetro único a la URL en cada fetch, para evitar la deduplicación del lado del cliente, y (2) tener en cuenta que aun así puede haber hasta ~5 minutos de rezago real del lado del CDN si se acaba de pushear algo — un fetch que devuelve 200 no garantiza que el contenido sea el del último commit.

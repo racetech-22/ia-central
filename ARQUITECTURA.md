@@ -46,6 +46,8 @@ Empieza como un dashboard ligero (artifact que consulta vía MCP: costos, modelo
 
 Cuando exista el panel real, la configuración de destino/credenciales de backup (hoy: `rclone` + Google Drive fijo en script/cron, ver ADR-005) debe migrar a ser gestionada ahí, no quedar fija en el filesystem del VPS.
 
+El panel administrativo es un panel de control (costos, modelos activos, salud de conectores, tareas en curso, cola de verificación de conocimiento) — no un segundo cliente de chat. La interfaz conversacional y su persistencia (conversaciones, mensajes, memoria) son una capa aparte, nativa en Django/Postgres cuando se construya, diferida a Fase 5. Ver ADR-013.
+
 ## 5. Hoja de ruta por fases
 
 - Fase 0: Memoria y contexto (este documento, ADRs, changelog, proyecto de Claude como ancla).
@@ -53,7 +55,9 @@ Cuando exista el panel real, la configuración de destino/credenciales de backup
 - Fase 2: Infraestructura base (VPS, Docker, repo, Django skeleton).
 - Fase 3: Conectores activos desde el inicio (MCP Django, MCP local, Agent SDK detrás de un gateway LiteLLM, Claude Code). Ver ADR-012.
 - Fase 4: Capa multi-IA (elección de modelo por defecto y política de enrutamiento sobre el gateway LiteLLM ya montado en Fase 3, modelo local opcional).
-- Fase 5: Panel administrativo.
+- Fase 5: Panel administrativo. Incluye, de forma nativa en Django/Postgres, la capa de interfaz y persistencia (conversaciones, mensajes, memoria) — diferida a esta fase, ver ADR-013.
+
+Fase 3 y 4 corren headless: conectores MCP + orquestador, sin interfaz web propia. La interfaz de trabajo en esas fases es Claude Code en la sesión tmux `iac` (ver CLAUDE.md), más logs y marcas de estado — no producen nada visible en el navegador, y eso es esperado, no un síntoma de que no avanza. Ver ADR-013.
 
 ## 6. Registro de decisiones
 
@@ -71,3 +75,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-010: Sync automático de la documentación a Google Drive vía GitHub Actions, con OAuth2 de cuenta personal en vez de cuenta de servicio (sin cuota de almacenamiento propia sin Google Workspace).
 - ADR-011: La fuente de verdad se consulta en vivo desde GitHub (`raw.githubusercontent.com`), no vía Knowledge/Drive estático — requiere que el repo sea público.
 - ADR-012: Independencia de proveedor vía gateway LiteLLM (desde el inicio de Fase 3) y el Claude Agent SDK como capa reemplazable detrás de una interfaz interna (`orchestrator.run(...)`).
+- ADR-013: Interfaz y persistencia propias en Django/Postgres (no productos de Anthropic), diferidas a Fase 5. Fase 3/4 corren headless.

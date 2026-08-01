@@ -129,6 +129,14 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 
 Al cerrar cada tarea o fase de trabajo, evalúa brevemente si algo de lo ocurrido (una preferencia expresada, un límite operativo descubierto) vale la pena guardar en memoria antes de seguir — no esperes a que se pida explícitamente con `/memory`.
 
+## Fuente de verdad en vivo desde GitHub (ADR-011)
+
+Cualquier sesión con acceso a fetch web o shell (Cowork, claude.ai con búsqueda, Claude Code) debe leer en vivo `README.md`/`CLAUDE.md`/`ARQUITECTURA.md`/`CHANGELOG.md`/`docs/decisiones/ADR-*.md` desde `https://raw.githubusercontent.com/racetech-22/ia-central/master/<path>`, en vez de depender de Knowledge/Files subidos a mano o copias en Drive (se desactualizan en cada commit).
+
+Dos capas de caché independientes a tener en cuenta (ver enmienda en ADR-011):
+- Agregar siempre un parámetro único a la URL (`?v=<sha-del-commit-o-timestamp>`) — evita que la propia herramienta de fetch reuse una respuesta ya cacheada dentro de la sesión (verificado: al menos la de Cowork deduplica por URL exacta hasta 900s).
+- Aun así, el CDN de GitHub puede tardar hasta ~5 minutos en reflejar un push recién hecho, y el query param no evita esto (verificado: el CDN ignora el query string para su propio caché). Un fetch que responde 200 no garantiza que sea el último commit — si se acaba de pushear algo, esperar un par de minutos antes de asumirlo.
+
 ## Metodología de trabajo con Fernando (cualquier sesión: Cowork, Claude Desktop, Claude Code)
 
 - Antes de responder cualquier pregunta o iteración, indicar explícitamente qué modelo de Claude (Sonnet 5 / Opus 5 / Fable 5) es el más adecuado para esa respuesta.
