@@ -14,7 +14,9 @@ El punto 1 cubre **portabilidad de servidor** (ADR-001: mover todo a otro VPS si
 ## 2. Arquitectura en tres capas
 
 ### Capa de orquestación
-El agente que decide qué hacer y a qué IA/herramienta delegar cada tarea, corriendo como proceso persistente en el VPS. Implementada con el Claude Agent SDK como motor del bucle, pero expuesta al resto del sistema (Django, MCP servers) únicamente vía una interfaz interna propia (`orchestrator.run(...)`) — el SDK es un detalle de implementación reemplazable, nunca se llama directamente desde fuera de esa interfaz. El SDK enruta sus llamadas a modelo a través de un gateway LiteLLM autohospedado, no directo a la API de Anthropic. Ver ADR-012.
+El agente que decide qué hacer y a qué IA/herramienta delegar cada tarea, corriendo como servicio de `docker-compose.yml` (`restart: always`), junto a `web` y `db` — no como servicio systemd ni sesión de tmux, para no salirse del contrato de portabilidad de ADR-002. Ver ADR-015. Implementada con el Claude Agent SDK como motor del bucle, pero expuesta al resto del sistema (Django, MCP servers) únicamente vía una interfaz interna propia (`orchestrator.run(...)`) — el SDK es un detalle de implementación reemplazable, nunca se llama directamente desde fuera de esa interfaz. El SDK enruta sus llamadas a modelo a través de un gateway LiteLLM autohospedado, no directo a la API de Anthropic. Ver ADR-012.
+
+El LLM que corre en el orquestador nunca tiene shell arbitrario. Toda capacidad sobre la infraestructura (migraciones, reinicio de servicios, lectura de archivos, git) se expone como tools MCP discretas y nombradas, implementadas como código determinista en `mcp_servers/` — la lista de tools disponibles ES la política de seguridad del agente autónomo, a diferencia de Claude Code (sesión `iac`, supervisada por Fernando), que sí tiene shell completo bajo `.claude/settings.json` y el hook de ADR-007. Ver ADR-015.
 
 ### Capa de conocimiento
 Memoria de largo plazo del sistema, independiente del servidor físico donde corre la orquestación. Compuesta por:
@@ -24,7 +26,7 @@ Memoria de largo plazo del sistema, independiente del servidor físico donde cor
 
 ### Capa de ejecución
 Los conectores que le dan al agente poder real sobre el mundo:
-- MCP server propio del proyecto Django (para que la IA Central pueda leer/modificar su propio código).
+- MCP server propio del proyecto Django (para que la IA Central pueda leer/modificar su propio código), expuesto como tools nombradas y deterministas (`run_migrations`, `restart_web`, `run_tests`…), nunca como shell abierto al modelo. Ver ADR-015.
 - MCP / acceso SSH hacia la estación local de Fernando (vía Tailscale o WireGuard).
 - MCP / acceso SSH de solo lectura por defecto hacia los otros servidores existentes de Fernando (no se escribe ahí hasta que se decida explícitamente lo contrario).
 - Claude Code como motor de desarrollo de código, tanto para IA CENTRAL como para los demás proyectos.
@@ -77,3 +79,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-012: Independencia de proveedor vía gateway LiteLLM (desde el inicio de Fase 3) y el Claude Agent SDK como capa reemplazable detrás de una interfaz interna (`orchestrator.run(...)`).
 - ADR-013: Interfaz y persistencia propias en Django/Postgres (no productos de Anthropic), diferidas a Fase 5. Fase 3/4 corren headless.
 - ADR-014: Auditoría semanal (`claude -p` de solo lectura, cron del sistema, domingos 04:45) que verifica que las ADR digan la verdad sobre el estado real del repo. Establece la convención de marcar como pendiente (con fase) toda afirmación sobre algo no implementado todavía.
+- ADR-015: El orquestador corre como servicio de `docker-compose.yml` (no systemd ni tmux). El LLM nunca tiene shell arbitrario — toda capacidad se expone como tools MCP discretas y nombradas; la lista de tools es la política de seguridad.
