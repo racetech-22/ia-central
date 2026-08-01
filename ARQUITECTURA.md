@@ -9,10 +9,12 @@ Todo lo que se construya debe cumplir dos condiciones simultáneas:
 1. Portable: transferible por completo a otro servidor sin perder base de conocimiento ni funcionalidad.
 2. Verificable: el conocimiento que el sistema acumula por sí mismo (auto-aprendizaje) solo se considera válido cuando pasa por un proceso explícito de verificación, nunca por defecto.
 
+El punto 1 cubre **portabilidad de servidor** (ADR-001: mover todo a otro VPS sin perder conocimiento). **Portabilidad de proveedor** — no quedar acoplado a un único proveedor de modelos — es un requisito distinto, resuelto en ADR-012 (gateway LiteLLM + framework de agente como capa reemplazable detrás de una interfaz interna).
+
 ## 2. Arquitectura en tres capas
 
 ### Capa de orquestación
-El agente que decide qué hacer y a qué IA/herramienta delegar cada tarea. Construida sobre el Claude Agent SDK, corriendo como proceso persistente en el VPS.
+El agente que decide qué hacer y a qué IA/herramienta delegar cada tarea, corriendo como proceso persistente en el VPS. Implementada con el Claude Agent SDK como motor del bucle, pero expuesta al resto del sistema (Django, MCP servers) únicamente vía una interfaz interna propia (`orchestrator.run(...)`) — el SDK es un detalle de implementación reemplazable, nunca se llama directamente desde fuera de esa interfaz. El SDK enruta sus llamadas a modelo a través de un gateway LiteLLM autohospedado, no directo a la API de Anthropic. Ver ADR-012.
 
 ### Capa de conocimiento
 Memoria de largo plazo del sistema, independiente del servidor físico donde corre la orquestación. Compuesta por:
@@ -26,7 +28,7 @@ Los conectores que le dan al agente poder real sobre el mundo:
 - MCP / acceso SSH hacia la estación local de Fernando (vía Tailscale o WireGuard).
 - MCP / acceso SSH de solo lectura por defecto hacia los otros servidores existentes de Fernando (no se escribe ahí hasta que se decida explícitamente lo contrario).
 - Claude Code como motor de desarrollo de código, tanto para IA CENTRAL como para los demás proyectos.
-- Router de modelos (LiteLLM u OpenRouter) para poder usar Claude, modelos locales (Ollama) u otras IAs de pago sin acoplar el core a un proveedor específico.
+- Router de modelos: LiteLLM autohospedado (no OpenRouter — se descartó por ser servicio de terceros con comisión, ver ADR-012), montado desde el inicio de Fase 3 aunque todo el tráfico vaya a Claude al principio. Permite usar Claude, modelos locales (Ollama) u otras IAs de pago sin acoplar el core a un proveedor específico ni reescribir el motor de orquestación. Ver ADR-012.
 
 ## 3. Infraestructura
 
@@ -49,8 +51,8 @@ Cuando exista el panel real, la configuración de destino/credenciales de backup
 - Fase 0: Memoria y contexto (este documento, ADRs, changelog, proyecto de Claude como ancla).
 - Fase 1: Cerrar decisiones de arquitectura antes de programar.
 - Fase 2: Infraestructura base (VPS, Docker, repo, Django skeleton).
-- Fase 3: Conectores activos desde el inicio (MCP Django, MCP local, Agent SDK, Claude Code).
-- Fase 4: Capa multi-IA (router de modelos, modelo local opcional).
+- Fase 3: Conectores activos desde el inicio (MCP Django, MCP local, Agent SDK detrás de un gateway LiteLLM, Claude Code). Ver ADR-012.
+- Fase 4: Capa multi-IA (elección de modelo por defecto y política de enrutamiento sobre el gateway LiteLLM ya montado en Fase 3, modelo local opcional).
 - Fase 5: Panel administrativo.
 
 ## 6. Registro de decisiones
@@ -68,3 +70,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-009: El agente de Cowork no puede alcanzar la red del VPS (sandbox con allowlist de dominios) — confirma que la ejecución autónoma de Fase 3 debe vivir como proceso nativo en el VPS, no como acceso remoto desde Cowork.
 - ADR-010: Sync automático de la documentación a Google Drive vía GitHub Actions, con OAuth2 de cuenta personal en vez de cuenta de servicio (sin cuota de almacenamiento propia sin Google Workspace).
 - ADR-011: La fuente de verdad se consulta en vivo desde GitHub (`raw.githubusercontent.com`), no vía Knowledge/Drive estático — requiere que el repo sea público.
+- ADR-012: Independencia de proveedor vía gateway LiteLLM (desde el inicio de Fase 3) y el Claude Agent SDK como capa reemplazable detrás de una interfaz interna (`orchestrator.run(...)`).
