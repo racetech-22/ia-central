@@ -67,3 +67,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-008: Cron mensual (sistema, no rutina de sesión) que corre `claude -p` de solo lectura para auditar la auto-memoria del proyecto.
 - ADR-009: El agente de Cowork no puede alcanzar la red del VPS (sandbox con allowlist de dominios) — confirma que la ejecución autónoma de Fase 3 debe vivir como proceso nativo en el VPS, no como acceso remoto desde Cowork.
 - ADR-010: Sync automático de la documentación a Google Drive vía GitHub Actions, con OAuth2 de cuenta personal en vez de cuenta de servicio (sin cuota de almacenamiento propia sin Google Workspace).
+- ADR-011: La fuente de verdad se consulta en vivo desde GitHub (`raw.githubusercontent.com`), no vía Knowledge/Drive estático — requiere que el repo sea público.

@@ -78,9 +78,9 @@ Este archivo está versionado (a diferencia de `.claude/settings.local.json`, qu
 - `Read` sobre `.env` → bloqueado correctamente ("File is in a directory that is denied by your permission settings").
 - `Bash: cat .env` → bloqueado correctamente.
 - `Bash: head -1 .env` → también bloqueado.
-- **`Bash: python3 -c "print(open('.env').read())"` → NO bloqueado, imprimió el contenido real completo** (`DJANGO_SECRET_KEY` y `POSTGRES_PASSWORD` reales quedaron expuestos en la conversación de esa verificación).
+- **Una invocación alternativa de shell fuera del patrón bloqueado → NO bloqueada**, imprimió el contenido real completo de `.env` (incluyendo las credenciales) en la conversación de esa verificación.
 
-Conclusión importante (documentada en detalle en ADR-006): las reglas `deny` de tipo `Bash(cat *.env*)` bloquean patrones de comando literales, no el acceso al archivo en sí — cualquier otra forma de leerlo por shell (`python3`, `node`, `less`, `grep`, `awk`, etc.) que no matchee ese patrón exacto puede saltárselo. El bloqueo verdaderamente "imposible" (a nivel de sandbox de filesystem, no de patrón de comando) requeriría `sandbox.credentials.files` con `mode: "deny"` y `sandbox.enabled: true` — pero esta VPS no tiene `bwrap` (bubblewrap) instalado, que es requisito para el sandbox de filesystem en Linux, así que esa vía no está disponible sin instalarlo primero. Por ahora, `deny` en este archivo es una mitigación parcial (bloquea la tool `Read` por completo, y el intento más obvio por Bash), no una garantía absoluta contra todo comando de shell posible — la defensa real hoy es que solo Fernando tiene acceso SSH a este VPS.
+Conclusión importante (documentada en detalle en ADR-006): las reglas `deny` de tipo `Bash(cat *.env*)` bloquean patrones de comando literales, no el acceso al archivo en sí — cualquier otra forma de leerlo por shell que no matchee ese patrón exacto (una invocación alternativa fuera del patrón bloqueado) puede saltárselo. El bloqueo verdaderamente "imposible" (a nivel de sandbox de filesystem, no de patrón de comando) requeriría `sandbox.credentials.files` con `mode: "deny"` y `sandbox.enabled: true` — pero esta VPS no tiene `bwrap` (bubblewrap) instalado, que es requisito para el sandbox de filesystem en Linux, así que esa vía no está disponible sin instalarlo primero. Por ahora, `deny` en este archivo es una mitigación parcial (bloquea la tool `Read` por completo, y el intento más obvio por Bash), no una garantía absoluta contra todo comando de shell posible — la defensa real hoy es que solo Fernando tiene acceso SSH a este VPS.
 
 ### Hook `PreToolUse` contra comandos destructivos (`.claude/hooks/block-destructive-db.sh`)
 
@@ -128,3 +128,9 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 ## Memoria entre sesiones
 
 Al cerrar cada tarea o fase de trabajo, evalúa brevemente si algo de lo ocurrido (una preferencia expresada, un límite operativo descubierto) vale la pena guardar en memoria antes de seguir — no esperes a que se pida explícitamente con `/memory`.
+
+## Metodología de trabajo con Fernando (cualquier sesión: Cowork, Claude Desktop, Claude Code)
+
+- Antes de responder cualquier pregunta o iteración, indicar explícitamente qué modelo de Claude (Sonnet 5 / Opus 5 / Fable 5) es el más adecuado para esa respuesta.
+- Trabajar en iteraciones de un solo paso: proponer o ejecutar una sola cosa a la vez y esperar el comentario/confirmación de Fernando antes de continuar con la siguiente — no solo en infraestructura, sino en cualquier tipo de tarea o decisión.
+- Ser proactivo dando opiniones y sugerencias técnicas propias e independientes en cada iteración, incluso cuando contradigan la idea inicial de Fernando o no vayan a agradarle — nunca responder de forma evasiva tipo "depende".
