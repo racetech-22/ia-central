@@ -1,0 +1,11 @@
+# Config de ntfy para IA CENTRAL. Ver ADR-018.
+# Referencia completa: https://ntfy.sh/docs/config/
+
+base-url: "https://ntfy.aicentral.network"
+
+listen-http: ":80"
+
+cache-file: "/var/cache/ntfy/cache.db"
+
+auth-file: "/var/lib/ntfy/user.db"
+auth-default-access: "deny-all"

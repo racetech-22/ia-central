@@ -38,5 +38,29 @@ services:
       retries: 3
       start_period: 20s
 
+  ntfy:
+    image: binwiederhier/ntfy:v2.26.3
+    restart: always
+    command: ["serve"]
+    # Nginx corre en el host, fuera de Docker (ADR-003), y necesita alcanzar
+    # este servicio para proxificar ntfy.aicentral.network - a diferencia de
+    # litellm (que solo otros contenedores necesitan alcanzar), acá hace
+    # falta publicar el puerto. Se limita a 127.0.0.1 (no 0.0.0.0): alcanzable
+    # por Nginx en el mismo host, no expuesto directo a la interfaz pública.
+    ports:
+      - "127.0.0.1:2586:80"
+    volumes:
+      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
+      - ntfy_lib:/var/lib/ntfy
+      - ntfy_cache:/var/cache/ntfy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--tries=1", "-O", "-", "http://localhost/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
 volumes:
   postgres_data:
+  ntfy_lib:
+  ntfy_cache:

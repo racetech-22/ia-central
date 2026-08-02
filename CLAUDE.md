@@ -93,6 +93,12 @@ Conclusión importante (documentada en detalle en ADR-006): las reglas `deny` de
 
 Probado con casos sintéticos (pipe directo al script) y en vivo con tool calls reales de Bash (`docker volume rm ia-central_postgres_data` y `docker compose down -v`, ambos abortados antes de ejecutarse). Como con ADR-006, la lista de patrones no es exhaustiva por diseño — si aparece una nueva forma de borrar el volumen o la base, hay que agregar la regla al script.
 
+### Hook de pre-commit de Git para integridad de `docs/decisiones/INDEX.md` (`.githooks/pre-commit`)
+
+A diferencia del hook `PreToolUse` de arriba (que solo corre dentro de Claude Code), este es un hook nativo de Git — bloquea cualquier commit, de cualquier origen, que toque `docs/decisiones/` si `INDEX.md` no coincide exactamente con los archivos `ADR-*.md` reales. Ver ADR-018.
+
+Requiere activación manual una vez por clon (no viaja con `git clone`): `git config core.hooksPath .githooks`. Si un commit sobre `docs/decisiones/` no se bloquea cuando debería, o se bloquea inesperadamente en un clon nuevo (VPS o máquina local), lo primero a revisar es si este paso se corrió ahí.
+
 ## Qué es IA CENTRAL
 
 Un agente orquestador con memoria persistente y verificada — no un chatbot — pensado para desarrollar, administrar y modificar todos los proyectos de Fernando (locales y en varios servidores), explotando múltiples IAs (Claude, modelos vía Ollama, otras de pago) según tarea/costo/disponibilidad, y aprendiendo de sus interacciones solo cuando ese conocimiento pasa por verificación explícita.
@@ -125,6 +131,7 @@ Cualquier función de auto-aprendizaje que se implemente debe cubrir las tres et
 - Cuando cambies ARQUITECTURA.md o agregues/edites una ADR, también hay que actualizar CHANGELOG.md en el mismo cambio, y recordarle a Fernando que debe subir la versión vigente a los archivos del proyecto "IA CENTRAL" en Claude para que conversaciones futuras arranquen con el contexto completo.
 - No dupliques contenido entre README.md, ARQUITECTURA.md y las ADRs: el README es el punto de entrada, ARQUITECTURA.md es la fuente de verdad completa, y las ADRs contienen el razonamiento detrás de cada decisión puntual.
 - **Convención de tiempo verbal en las ADR** (ver ADR-014): el presente ("se agrega", "existe", "corre") se reserva para artefactos que ya existen en el repo en el momento de escribir la ADR — algo verificable ahí mismo. Cualquier afirmación sobre un artefacto que todavía no está implementado debe marcarse explícitamente como pendiente y con la fase que corresponde, ej. `**Pendiente (Fase 3):** agregar LiteLLM a docker-compose.yml`. Esto es lo que distingue una ADR verificable de una que afirma cosas no hechas — el problema detectado dos veces el 2026-08-01 (ADR-011 con una instrucción que nunca se agregó a CLAUDE.md, y ADR-012 con LiteLLM en `docker-compose.yml` descrito en presente sin estar implementado).
+- `docs/DEPENDENCIAS.md` (ver ADR-019) se actualiza en el mismo commit que se agregue, cambie de versión, o se retire cualquier herramienta o servicio externo del que dependa el sistema — incluidos los que no son software instalado en el VPS (registrador, DNS).
 
 ## Memoria entre sesiones
 
@@ -145,3 +152,4 @@ Dos capas de caché independientes a tener en cuenta (ver enmienda en ADR-011):
 - Antes de responder cualquier pregunta o iteración, indicar explícitamente qué modelo de Claude (Sonnet 5 / Opus 5 / Fable 5) es el más adecuado para esa respuesta.
 - Trabajar en iteraciones de un solo paso: proponer o ejecutar una sola cosa a la vez y esperar el comentario/confirmación de Fernando antes de continuar con la siguiente — no solo en infraestructura, sino en cualquier tipo de tarea o decisión.
 - Ser proactivo dando opiniones y sugerencias técnicas propias e independientes en cada iteración, incluso cuando contradigan la idea inicial de Fernando o no vayan a agradarle — nunca responder de forma evasiva tipo "depende".
+- Aplicar por defecto, en cualquier tarea (de esta o cualquier sesión) y sin esperar a que se pida, esta lógica: al cerrar un gap de verificación o automatización, revisar si ese mismo tipo de gap se repite en otro lado del proyecto — mecanismos que dependen de que alguien se acuerde de mirar un log, convenciones documentadas pero no forzadas por código, marcas de estado que miden "el proceso corrió" en vez de "el resultado es el esperado", dependencias externas no registradas en ningún lado. Señalarlo explícitamente aunque no se haya pedido, y resolverlo si es de bajo riesgo; si no, dejarlo anotado como pendiente concreto, no como duda genérica.

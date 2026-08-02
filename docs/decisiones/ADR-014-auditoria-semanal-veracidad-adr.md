@@ -31,3 +31,9 @@ Se corrigió también la redacción de ADR-012 (la frase sobre LiteLLM en `docke
 - Esta convención de redacción aplica hacia adelante, para ADR nuevas — no se reescribieron retroactivamente las secciones de Decisión de las ADR anteriores a esta, que ya usan tiempo presente de forma declarativa (es el modo natural de un registro de decisión: "se decide hacer X"), a diferencia de afirmaciones puntuales de existencia de un artefacto concreto, que es donde apareció el problema real.
 - Si en el futuro la auditoría empieza a dar falsos positivos o negativos de forma sistemática, hay que ajustar el prompt de `scripts/adr_audit.sh` — igual que se hizo acá, probando en vivo antes de confiar en el resultado.
 - Igual que `memory_audit.sh` (ADR-008), si se migra el proyecto a otro servidor (ADR-002) hay que recrear la entrada de `crontab` — el script sí viaja versionado con el repo.
+
+## Enmienda (2026-08-02): agregada verificación (d), integridad de `docs/decisiones/INDEX.md`
+
+Tras agregar `docs/decisiones/INDEX.md` (ver enmienda del mismo día a ADR-011), se extiende el prompt de `scripts/adr_audit.sh` con una cuarta verificación: que el índice liste exactamente los archivos ADR reales del directorio, sin faltantes, sin entradas huérfanas (archivo renombrado sin reflejar en el índice), y sin duplicados de número. Mismo criterio de prioridad que las discrepancias de contenido — un índice desactualizado rompe el mecanismo completo de ADR-011 para sesiones fetch-only, no es un detalle menor.
+
+Se agrega además en la misma corrección (ver ADR-018) una marca grepeable `ADR_CONTENT_STATUS=CLEAN|DISCREPANCIES_FOUND`, independiente de `ADR_AUDIT_STATUS`: esta última solo refleja si la llamada a `claude -p` se ejecutó sin errores, no si el contenido de la auditoría encontró algo. Sin esa segunda marca, una corrida que sí detecta una discrepancia real terminaba igual con `ADR_AUDIT_STATUS=OK`.

@@ -23,3 +23,5 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-015 | ADR-015-orquestador-docker-superficie-cerrada.md |
 | ADR-016 | ADR-016-autenticacion-por-suscripcion.md |
 | ADR-017 | ADR-017-credencial-suscripcion-en-contenedor.md |
+| ADR-018 | ADR-018-hook-precommit-index-y-notificacion.md |
+| ADR-019 | ADR-019-inventario-dependencias-externas.md |

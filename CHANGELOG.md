@@ -34,6 +34,10 @@ Todas las decisiones y avances relevantes del proyecto quedan registradas aquí,
 ## 2026-08-02
 
 - Detectado desde una sesión de Cowork (sin navegador) que los nombres de archivo de las ADR no son deducibles (`ADR-NNN.md` es incorrecto, cada una lleva slug descriptivo) y que no hay forma de descubrirlos sin acceso a navegador, agravando el problema ya conocido de que `api.github.com` devuelve vacío desde ese tipo de fetch (ver enmienda anterior a ADR-011). Agregado `docs/decisiones/INDEX.md` (ruta fija, tabla ADR → nombre de archivo) y la instrucción correspondiente en CLAUDE.md. Enmendado ADR-011.
+- Extendida la auditoría semanal (`scripts/adr_audit.sh`, ADR-014) con una cuarta verificación: que `docs/decisiones/INDEX.md` liste exactamente los archivos ADR reales, sin faltantes, entradas huérfanas ni duplicados de número. Agregada además una marca grepeable `ADR_CONTENT_STATUS=CLEAN|DISCREPANCIES_FOUND`, independiente de `ADR_AUDIT_STATUS` (que solo medía si la CLI corrió, no si la auditoría encontró algo). Enmendado ADR-014.
+- Agregado ADR-018: hook de pre-commit de Git (`.githooks/pre-commit`) que bloquea commits sobre `docs/decisiones/` si `INDEX.md` no coincide con los archivos reales, y notificación push cuando la auditoría semanal falla, encuentra discrepancias, o no devuelve el marcador esperado. La notificación usa una instancia propia de ntfy (servicio nuevo en `docker-compose.yml`, imagen pineada, expuesta en `ntfy.aicentral.network` vía Nginx+Certbot, con token dedicado de solo publicación) — se descartó ntfy.sh público por consistencia con ADR-012.
+- Agregado ADR-019 y `docs/DEPENDENCIAS.md`: inventario versionado de herramientas y servicios externos (versión, ubicación, ADR de origen, política de actualización, qué depende de cada uno), incluyendo dependencias que no son software instalado, como el registrador/DNS. Ninguna versión se actualiza de forma automática, todas quedan pineadas.
+- Agregada a CLAUDE.md la convención del hook de pre-commit, la regla de mantenimiento de `docs/DEPENDENCIAS.md`, y un principio general de cierre proactivo de gaps en "Metodología de trabajo con Fernando".
 
 ## 2026-08-01
 

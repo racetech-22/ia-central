@@ -84,3 +84,5 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-015: El orquestador corre como servicio de `docker-compose.yml` (no systemd ni tmux). El LLM nunca tiene shell arbitrario — toda capacidad se expone como tools MCP discretas y nombradas; la lista de tools es la política de seguridad.
 - ADR-016: Fase 3 arranca con autenticación por suscripción, no con clave de API — el gateway LiteLLM de ADR-012 queda montado pero fuera del camino real de las llamadas a Claude mientras dure esta vía.
 - ADR-017: El orquestador autentica montando el credencial de suscripción en solo lectura con UID alineado, condicionado a que ninguna tool MCP permita lectura de rutas arbitrarias — si esa condición se rompe, la decisión queda invalidada.
+- ADR-018: Hook de pre-commit de Git que bloquea si `docs/decisiones/INDEX.md` no coincide con los archivos reales, y notificación push (ntfy autohospedado) si la auditoría semanal de ADR-014 encuentra discrepancias, falla, o no devuelve el marcador esperado.
+- ADR-019: Inventario versionado de herramientas y servicios externos del proyecto (`docs/DEPENDENCIAS.md`), sin actualización automática.

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+INDEX_FILE="docs/decisiones/INDEX.md"
+
+if ! git diff --cached --name-only | grep -q '^docs/decisiones/'; then
+  exit 0
+fi
+
+if [ ! -f "$INDEX_FILE" ]; then
+  echo "pre-commit: falta $INDEX_FILE" >&2
+  exit 1
+fi
+
+real_files=$(ls docs/decisiones/ADR-*.md 2>/dev/null | xargs -n1 basename | sort)
+indexed_files=$(grep -oE 'ADR-[0-9]{3}-[a-zA-Z0-9-]+.md' "$INDEX_FILE" | sort -u)
+
+missing_in_index=$(comm -23 <(echo "$real_files") <(echo "$indexed_files"))
+orphan_in_index=$(comm -13 <(echo "$real_files") <(echo "$indexed_files"))
+
+if [ -n "$missing_in_index" ] || [ -n "$orphan_in_index" ]; then
+  echo "pre-commit: INDEX.md desactualizado respecto a docs/decisiones/. Commit bloqueado." >&2
+  if [ -n "$missing_in_index" ]; then
+    echo "  Archivos reales sin entrada en INDEX.md:" >&2
+    echo "$missing_in_index" | sed 's/^/    /' >&2
+  fi
+  if [ -n "$orphan_in_index" ]; then
+    echo "  Entradas de INDEX.md sin archivo real correspondiente:" >&2
+    echo "$orphan_in_index" | sed 's/^/    /' >&2
+  fi
+  exit 1
+fi
+
+exit 0
