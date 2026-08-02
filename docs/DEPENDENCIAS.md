@@ -20,3 +20,4 @@ Criterio de inclusión: de qué depende el sistema para funcionar, no qué está
 | Django | `>=5.0,<6.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
 | psycopg[binary] | `>=3.1,<4.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
 | python-dotenv | `>=1.0,<2.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
+| mcp | `==1.29.0` (pin exacto, línea v1 madura — no la v2.0.0 recién publicada) | `mcp_servers/django_project/requirements.txt` | ADR-020 | Manual, pinear versión exacta (nunca `latest` ni rango) | El MCP server del proyecto Django (`mcp_servers/django_project/`) |
