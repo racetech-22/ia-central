@@ -138,6 +138,8 @@ Dos capas de caché independientes a tener en cuenta (ver enmienda en ADR-011):
 - Agregar siempre un parámetro único a la URL (`?v=<sha-del-commit-o-timestamp>`) — evita que la propia herramienta de fetch reuse una respuesta ya cacheada dentro de la sesión (verificado: al menos la de Cowork deduplica por URL exacta hasta 900s).
 - Aun así, el CDN de GitHub puede tardar hasta ~5 minutos en reflejar un push recién hecho, y el query param no evita esto (verificado: el CDN ignora el query string para su propio caché). Un fetch que responde 200 no garantiza que sea el último commit — si se acaba de pushear algo, esperar un par de minutos antes de asumirlo.
 
+**Los nombres de archivo de las ADR no son deducibles** (`ADR-NNN.md` es incorrecto — cada una lleva un slug descriptivo, ver ADR-011 enmienda 2026-08-02). Antes de pedir una ADR puntual, leer primero `docs/decisiones/INDEX.md` (misma ruta fija, mismo mecanismo de `?v=<único>`) para resolver el nombre real. Si no hay acceso a navegador y `INDEX.md` no puede leerse por algún motivo, no asumir un nombre — reportar el bloqueo en vez de adivinar.
+
 ## Metodología de trabajo con Fernando (cualquier sesión: Cowork, Claude Desktop, Claude Code)
 
 - Antes de responder cualquier pregunta o iteración, indicar explícitamente qué modelo de Claude (Sonnet 5 / Opus 5 / Fable 5) es el más adecuado para esa respuesta.

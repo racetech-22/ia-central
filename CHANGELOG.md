@@ -31,6 +31,10 @@ Todas las decisiones y avances relevantes del proyecto quedan registradas aquí,
 - Descartado el sync de Knowledge/Drive del proyecto de Claude Desktop como fuente de verdad (0 archivos de forma persistente por un problema de rama default, y las copias de Drive quedan estáticas). Decidido que cualquier sesión con acceso a fetch/shell debe leer en vivo `README.md`/`CLAUDE.md`/`ARQUITECTURA.md`/`CHANGELOG.md`/ADRs directamente desde `raw.githubusercontent.com` — para eso, el repo pasó a ser público. Ver ADR-011.
 - Actualizadas las menciones desactualizadas de "repo privado" en ARQUITECTURA.md §3 y CLAUDE.md (quedaban así desde ADR-002, antes de que ADR-011 pasara el repo a público). Agregada nota de amendment en ADR-002 marcando ese punto específico como superado por ADR-011, sin invalidar el resto de esa decisión.
 
+## 2026-08-02
+
+- Detectado desde una sesión de Cowork (sin navegador) que los nombres de archivo de las ADR no son deducibles (`ADR-NNN.md` es incorrecto, cada una lleva slug descriptivo) y que no hay forma de descubrirlos sin acceso a navegador, agravando el problema ya conocido de que `api.github.com` devuelve vacío desde ese tipo de fetch (ver enmienda anterior a ADR-011). Agregado `docs/decisiones/INDEX.md` (ruta fija, tabla ADR → nombre de archivo) y la instrucción correspondiente en CLAUDE.md. Enmendado ADR-011.
+
 ## 2026-08-01
 
 - Decidido (ADR-012) que la independencia de proveedor de modelos es un requisito distinto de la portabilidad de servidor de ADR-001. Se monta LiteLLM autohospedado como gateway de modelos desde el inicio de Fase 3 (aunque todo el tráfico vaya a Claude al principio), y el Claude Agent SDK queda marcado como capa reemplazable detrás de una interfaz interna propia (`orchestrator.run(...)`) — el resto del sistema nunca llama al SDK directamente. Actualizados ARQUITECTURA.md §1/§2/§5/§6 en consecuencia.
