@@ -23,3 +23,9 @@ Fernando ya tiene cuenta en GitHub y VPS existentes en Contabo con otros proyect
 
 - Se generó una clave SSH dedicada en el VPS (deploy key) y se agregó con acceso de lectura/escritura al repo en GitHub, sin usar la clave personal de Fernando.
 - El acceso a otros servidores se implementa como conectores de solo lectura, revisables antes de otorgar cualquier permiso de escritura.
+
+## Enmienda 2026-08-02: no se mantiene un clon local en la máquina de Fernando
+
+La auditoría de solo lectura del 2026-08-02 detectó que ARQUITECTURA.md §3 y CLAUDE.md afirmaban que el repo estaba "clonado igual en el VPS y en la máquina local de Fernando", sin que exista ninguna entrada en CHANGELOG.md que documente la creación de ese clon — una afirmación no verificada.
+
+Se decide no mantener ese clon local: GitHub y el VPS ya son dos copias completas con historia de Git íntegra, y el snapshot diario de VM de Contabo (ver ARQUITECTURA.md §3) cubre el escenario de pérdida total del VPS. Un clon local adicional, sin disciplina de `git pull` regular, es un riesgo de desactualización silenciosa más que una protección real — mismo patrón que ya falló una vez con el sync de Knowledge/Drive de Claude Desktop (ver ADR-011). Se corrige la redacción de ARQUITECTURA.md §3 y CLAUDE.md en consecuencia.

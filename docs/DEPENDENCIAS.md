@@ -17,3 +17,6 @@ Criterio de inclusión: de qué depende el sistema para funcionar, no qué está
 | LiteLLM | Imagen pineada (`ghcr.io/berriai/litellm:v1.83.14-stable`) | Servicio `litellm` de Docker Compose | ADR-012 | Manual, pinear versión exacta (nunca `latest`) | Orquestador (Fase 3; fuera del camino real por ADR-016) |
 | Claude Agent SDK / CLI de Claude Code | Según lo instalado en VPS y local | Dependencia de librería del orquestador + binario `claude` | ADR-012, ADR-017 | Manual | Orquestador, `scripts/memory_audit.sh`, `scripts/adr_audit.sh` |
 | ntfy | Imagen pineada (`binwiederhier/ntfy:v2.26.3`) | Servicio `ntfy` de Docker Compose | ADR-018 | Manual, pinear versión exacta (nunca `latest`) | `scripts/adr_audit.sh`; reutilizable por cualquier mecanismo futuro que necesite avisar a Fernando |
+| Django | `>=5.0,<6.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
+| psycopg[binary] | `>=3.1,<4.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
+| python-dotenv | `>=1.0,<2.0` (`requirements.txt`) | Dependencia de `web`, instalada vía `requirements.txt` | ADR-002 | Manual | `web` |
