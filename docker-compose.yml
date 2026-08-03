@@ -49,7 +49,10 @@ services:
       # ADR-017, ADR-021). El UID del usuario del contenedor (build arg de
       # arriba) tiene que coincidir con el dueño real de este archivo en el
       # host, o el proceso ve "Permission denied" (el archivo es modo 600).
-      - ${HOME}/.claude/.credentials.json:/home/orchestrator/.claude/.credentials.json:ro
+      # ORCHESTRATOR_CREDENTIALS_PATH es variable propia del proyecto, no
+      # ${HOME} del usuario que corre `docker compose` — mismo patrón que
+      # ORCHESTRATOR_UID, ver env.example.
+      - ${ORCHESTRATOR_CREDENTIALS_PATH:-/home/fernando/.claude/.credentials.json}:/home/orchestrator/.claude/.credentials.json:ro
       # Repo completo en solo lectura: es lo único que necesita el MCP server
       # de mcp_servers/django_project para que git_status/read_file
       # funcionen. Nada de socket de Docker, nada de escritura desde acá.
