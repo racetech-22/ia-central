@@ -6,6 +6,8 @@ Criterio de inclusión: de qué depende el sistema para funcionar, no qué está
 
 **Mantenimiento**: actualizar en el mismo commit que se agregue, cambie de versión, o se retire cualquier dependencia de esta lista.
 
+**Pendiente, sin ADR propia todavía — chequeo de versiones + prueba en cuarentena**: idea de Fernando, dado lo dinámico que es el desarrollo de Claude Code/el SDK, todavía sin implementar (documentado acá como pendiente concreto, no construido). Mecanismo de dos partes, aplicable a todas las dependencias pineadas de este inventario, no a una sola: (1) chequeo periódico (cron, mismo patrón que `adr_audit.sh`) que consulte PyPI/GitHub por versiones nuevas de las dependencias relevantes (`claude-agent-sdk`, `mcp`, etc.) y avise por `ntfy` (ya montado, ADR-018) si hay una versión nueva — sin actualizar nada solo, nunca automático; (2) un script de "prueba en cuarentena": levantar un contenedor descartable con la versión candidata, correr la suite de tests real del proyecto contra ella, y reportar el resultado — recién ahí Fernando decide si fija la versión nueva. Misma disciplina ya aplicada a mano el mismo día con `mcp==1.29.0` vs `2.0.0` (ver ADR-020), pero como chequeo repetible en vez de una verificación puntual.
+
 | Herramienta | Versión / pin | Dónde vive | ADR de origen | Actualización | Qué depende de ella |
 |---|---|---|---|---|---|
 | Docker / Docker Compose | Versión del SO del VPS, no pineada por el proyecto | Sistema operativo del VPS | ADR-002 | Manual, junto con mantenimiento del SO | Todo el stack |

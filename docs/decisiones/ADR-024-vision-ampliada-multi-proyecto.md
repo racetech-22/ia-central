@@ -48,3 +48,25 @@ Se confirman cinco pilares de la visión ampliada:
 - La sala de discusión de a tres (punto 4, forma mínima) puede arrancar en Fase 3 con parte de la infraestructura ya construida (orquestador angosto para lo autónomo, tools de `mcp_servers/django_project`) — su forma final, persistida en Django/Postgres dentro del panel, depende de la capa de interfaz/persistencia de Fase 5 (ADR-013).
 - **El puente real entre la sala y el proceso de Claude Code es la pieza técnica crítica pendiente de diseño del primer bloque de trabajo (sala + memoria), no un detalle menor.** Necesita invocar programáticamente al mismo Claude Code de la sesión `iac` (no una instancia aparte ni el orquestador angosto) y traer sus prompts de aprobación (`allow`/`ask`/`deny` de `.claude/settings.json`) a la interfaz de chat de la sala, en vez de a una terminal tmux. No se diseña a fondo en esta ADR — queda anotado como el trabajo técnico central a resolver antes de que la sala en su forma mínima sea real, no una decisión ya tomada.
 - ARQUITECTURA.md se actualiza en el mismo commit (§1, §2, §5, §6) para reflejar esta decisión — ver CHANGELOG.md.
+
+## Enmienda 2026-08-03: recursos del `claude-agent-sdk` relevantes para los cinco pilares
+
+Investigación (Cowork), verificada contra el código fuente real del SDK (`anthropics/claude-agent-sdk-python`, tag `v0.2.128`, commit `f8b9ec92`, `src/claude_agent_sdk/__init__.py` y `types.py` — cada símbolo listado abajo se confirmó presente en el `__all__` real de ese commit, no asumido). **Esto no es una decisión de diseño todavía — es catálogo de recursos disponibles, para cuando le toque el turno de diseño en detalle a cada pilar (ver Consecuencias de esta ADR: cada pilar amerita su propia ADR).** No se implementa nada de esto ahora.
+
+Organizado por pilar, con los símbolos exportados relevantes (nombres exactos, para ubicarlos fácil en la fuente cuando corresponda):
+
+- **Pilar 1 (memoria)**: el SDK ya trae gestión de sesiones — `list_sessions`, `get_session_info`, `get_session_messages`, `fork_session`, `rename_session`, `tag_session`, `delete_session`, y una interfaz `SessionStore` (con `InMemorySessionStore` de referencia) más `import_session_to_store`. Candidato: implementar un `SessionStore` propio respaldado en Postgres en vez de diseñar persistencia de conversación desde cero.
+
+- **Pilar 4 (sala, roles planificador/ejecutor)**: soporte nativo de sub-agentes — `AgentDefinition`, `agent_id` en `ToolPermissionContext` (confirmado en `types.py`: `agent_id: str | None = None`, "If running within the context of a sub-agent, the sub-agent's ID"), `list_subagents`, `get_subagent_messages`, hooks `SubagentStartHookInput`/`SubagentStopHookInput`. Candidato a evaluar antes de diseñar el puente (ver Consecuencias más arriba): si planificador y ejecutor pueden modelarse como dos sub-agentes dentro de una misma sesión del SDK, en vez de dos procesos separados puenteados a mano.
+
+- **Pilar 3 (motor de permisos)**: además de `CanUseTool` (ya confirmado antes de esta enmienda, ver ADR-021), el SDK expone un sistema de hooks más amplio — `PreToolUseHookInput`, `PostToolUseHookInput`, `PostToolUseFailureHookInput`, `UserPromptSubmitHookInput`, `StopHookInput`, `PreCompactHookInput`, `NotificationHookInput`. El hook de `Notification` es candidato directo a integrarse con el `ntfy` ya montado (ADR-018).
+
+- **Pilar 5 (multi-modelo, elección por costo/necesidad)**: soporte de esfuerzo de razonamiento adaptativo (`ThinkingConfig`, `EffortLevel`, `ThinkingConfigAdaptive`/`ThinkingConfigEnabled`/`ThinkingConfigDisabled`) y tracking nativo de uso/costo (`TaskBudget`, `TaskUsage`, `ModelUsage`, `RateLimitEvent`, `RateLimitInfo`, `RateLimitStatus`). No haría falta instrumentar medición de costo/uso a mano — el SDK ya lo expone.
+
+- **Pilar 2 (panel/dashboard)**: mensajes de progreso de tareas ya estructurados (`TaskStartedMessage`, `TaskProgressMessage`, `TaskUpdatedMessage`, `TaskNotificationMessage`) y uso de contexto (`ContextUsageResponse`) — datos listos para alimentar pantallas del panel sin instrumentación propia.
+
+- **Bonus, fuera de los cinco pilares pero relevante para tools futuras**: `create_sdk_mcp_server`/`tool` (decorador) permite tools MCP en el mismo proceso de Python (sin subproceso stdio, acceso directo al estado de la app) — más simple que el patrón de subproceso stdio usado en ADR-020 para `mcp_servers/django_project`. Candidato a reconsiderar en la próxima tanda de tools nuevas, no una corrección a lo ya construido.
+
+- **Bonus, relacionado con el gap de ADR-006**: el SDK tiene soporte de sandbox (`SandboxSettings`, `SandboxNetworkConfig`, `SandboxIgnoreViolations`) — condicionado a que el VPS tenga `bwrap` instalado (confirmado en ADR-006 que hoy no lo tiene). Anotar como candidato a revisar si algún día se instala `bwrap`.
+
+Ninguno de estos hallazgos es una decisión tomada — son recursos identificados para cuando se diseñe cada pilar en detalle, con su propia ADR, como ya estableció esta ADR más arriba.
