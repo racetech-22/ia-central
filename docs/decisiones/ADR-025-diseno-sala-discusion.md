@@ -35,7 +35,7 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
 ## Abierto, no resuelto
 
-- **Autenticación por proyecto/agente remoto**: ¿cada agente remoto usa la misma suscripción de Fernando (riesgo de cupo compartido, ya advertido en ADR-016) o clave de API propia vía el gateway LiteLLM de ADR-012 (una clave por proyecto, sin ese riesgo)? Ninguna decisión tomada. Candidato a investigar: si Anthropic permite generar claves de API de forma programática desde su Consola — **no verificado todavía, no asumir que sí**.
+- **Qué tipo de credencial pedirle a Fernando en el formulario de "conectar proyecto nuevo"**: la creación de la credencial en sí (login de suscripción o clave de API) siempre es manual, hecha por Fernando fuera de IA CENTRAL — igual que la cuenta de Anthropic y el servidor mismo (ver punto 5 más arriba); la herramienta solo toma una credencial ya creada y arma la conexión, nunca crea cuentas ni claves por su cuenta. La pregunta abierta es cuál de las dos pedirle: la misma suscripción de Fernando (login, más simple, pero con riesgo de cupo compartido entre proyectos, ya advertido en ADR-016) o una clave de API separada por proyecto vía el gateway LiteLLM de ADR-012 (aísla el cupo de cada proyecto, pero cada clave la crea Fernando a mano en la Consola de Anthropic). Ninguna decisión tomada todavía.
 - Protocolo exacto de conexión saliente del agente remoto hacia IA CENTRAL (websocket, polling, algo del propio SDK) — no diseñado.
 - Esquema exacto de base de datos para proyectos/chats/sesiones — no diseñado, solo la idea general (`SessionStore` propio sobre Postgres).
 - Pantalla exacta del panel para "conectar proyecto nuevo" — no diseñada.
