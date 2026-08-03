@@ -1,4 +1,4 @@
-"""Entrypoint MCP del proyecto Django de IA CENTRAL (ver ADR-020, ADR-021, ADR-022).
+"""Entrypoint MCP del proyecto Django de IA CENTRAL (ver ADR-020, ADR-021, ADR-022, ADR-023).
 
 Ya conectado al servicio real `orchestrator` de docker-compose.yml (ver
 ADR-021) — corre como subproceso stdio dentro de ese contenedor.
@@ -30,6 +30,18 @@ def read_file(path: str) -> str:
 def restart_web() -> str:
     """Reinicia el contenedor `web` (nombre fijo). Sin parámetros. Ver ADR-022."""
     return tools.restart_web()
+
+
+@mcp.tool()
+def run_migrations() -> str:
+    """Corre `python manage.py migrate` contra la base real. Sin parámetros. Ver ADR-023."""
+    return tools.run_migrations()
+
+
+@mcp.tool()
+def run_tests() -> str:
+    """Corre la suite de tests del proyecto (`python manage.py test`). Sin parámetros. Ver ADR-023."""
+    return tools.run_tests()
 
 
 if __name__ == "__main__":

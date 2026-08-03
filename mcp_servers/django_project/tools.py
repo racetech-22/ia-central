@@ -3,19 +3,24 @@
 ADR-020 (primera entrega): dos tools de solo lectura, cero efectos
 secundarios (`git_status`, `read_file`).
 
-ADR-022 (segunda entrega): agrega `restart_web`, la única de las tres tools
-con efectos reales originalmente previstas (`run_migrations`, `restart_web`,
-`run_tests`) que se pudo aislar limpio con `tecnativa/docker-socket-proxy` —
-`ALLOW_RESTARTS` es una ACL independiente de `CONTAINERS` en ese proxy.
-`run_migrations`/`run_tests` (que necesitan `exec` dentro del contenedor)
-quedan deliberadamente afuera: el proxy no tiene forma de habilitar exec sin
-habilitar también crear/borrar contenedores (`CONTAINERS` es todo-o-nada),
-así que requieren un mecanismo distinto, todavía sin decidir — ver ADR-022.
+ADR-022 (segunda entrega): agrega `restart_web`, aislada limpio con
+`tecnativa/docker-socket-proxy` (`ALLOW_RESTARTS` es una ACL independiente
+de `CONTAINERS` en ese proxy).
+
+ADR-023 (tercera entrega): agrega `run_migrations`/`run_tests`, que
+necesitan `exec` dentro de un contenedor — algo que el proxy de ADR-022 no
+puede aislar de crear/borrar contenedores nuevos (`CONTAINERS` es
+todo-o-nada). En vez de forzarlo por ahí, corren contra un sidecar propio
+(`admin-tasks`, misma imagen que `web`) que nunca toca Docker en absoluto —
+solo corre comandos fijos de Django management contra la base real.
 """
 
 from __future__ import annotations
 
+import os
 import subprocess
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import docker
@@ -29,6 +34,10 @@ MAX_READ_BYTES = 200_000
 # "ia-central", servicio "web", instancia 1) — NUNCA compuesto a partir de
 # nada que venga del modelo. Ver ADR-022.
 WEB_CONTAINER_NAME = "ia-central-web-1"
+
+# Nombre de servicio (resuelto por la red interna de Docker Compose) del
+# sidecar de ADR-023 — nunca publicado al host, ver docker-compose.yml.
+ADMIN_TASKS_BASE_URL = "http://admin-tasks:8100"
 
 
 def git_status() -> str:
@@ -87,3 +96,43 @@ def restart_web() -> str:
         client.close()
 
     return f"Contenedor {WEB_CONTAINER_NAME!r} reiniciado."
+
+
+def _call_admin_tasks(path: str) -> str:
+    """POST de solo infraestructura al sidecar `admin-tasks` (ver ADR-023).
+
+    `path` es siempre uno de los dos valores fijos usados por
+    `run_migrations`/`run_tests` acá abajo — nunca algo que el modelo pueda
+    elegir. El token sale de `ADMIN_TASKS_TOKEN` (mismo valor que el
+    sidecar, ver docker-compose.yml); si falta, la request igual se manda
+    (el sidecar la va a rechazar con 401 — falla cerrado del lado del
+    servidor, no de acá).
+    """
+    token = os.environ.get("ADMIN_TASKS_TOKEN", "")
+    request = urllib.request.Request(
+        f"{ADMIN_TASKS_BASE_URL}{path}",
+        method="POST",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=300) as response:
+            return response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"admin-tasks devolvió {exc.code}: {body}") from exc
+
+
+def run_migrations() -> str:
+    """Corre `python manage.py migrate` contra la base real, vía `admin-tasks`.
+
+    Sin parámetros. Ver ADR-023.
+    """
+    return _call_admin_tasks("/run-migrations")
+
+
+def run_tests() -> str:
+    """Corre `python manage.py test` (la suite del proyecto), vía `admin-tasks`.
+
+    Sin parámetros. Ver ADR-023.
+    """
+    return _call_admin_tasks("/run-tests")

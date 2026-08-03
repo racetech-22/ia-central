@@ -21,6 +21,23 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
 
+  admin-tasks:
+    # Misma imagen que `web` (mismo Dockerfile, mismo código, mismas
+    # dependencias) — ver ADR-023. Nunca toca el socket ni la API de Docker;
+    # a diferencia de docker-proxy/ADR-022, esto no es una alternativa al
+    # aislamiento por permisos de Docker, es evitar Docker por completo para
+    # run_migrations/run_tests.
+    build: .
+    restart: unless-stopped
+    command: ["python", "admin_tasks_server.py"]
+    env_file:
+      - .env
+    depends_on:
+      - db
+    # Sin ports: — solo alcanzable por la red interna de Docker Compose.
+    # El token de ADMIN_TASKS_TOKEN (ver .env/env.example) es defensa en
+    # profundidad además de este aislamiento de red.
+
   litellm:
     image: ghcr.io/berriai/litellm:v1.83.14-stable
     restart: always
@@ -63,12 +80,15 @@ services:
     restart: always
     depends_on:
       - docker-proxy
+      - admin-tasks
     environment:
       PYTHONPATH: /app
       # El SDK de docker (orchestrator/tools o mcp_servers/django_project)
       # habla con el proxy, nunca con /var/run/docker.sock directo — ver
       # ADR-022.
       DOCKER_HOST: tcp://docker-proxy:2375
+      # Mismo valor que el de admin-tasks (ambos leen de .env) — ver ADR-023.
+      ADMIN_TASKS_TOKEN: ${ADMIN_TASKS_TOKEN}
     volumes:
       # Credencial de suscripción de Claude Code, solo lectura (ver ADR-016,
       # ADR-017, ADR-021). El UID del usuario del contenedor (build arg de

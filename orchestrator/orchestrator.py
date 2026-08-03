@@ -47,6 +47,8 @@ es exactamente el de mcp_servers/django_project.
 
 from __future__ import annotations
 
+import os
+
 import anyio
 from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, ResultMessage
 
@@ -66,18 +68,25 @@ _OPTIONS = ClaudeAgentOptions(
             "type": "stdio",
             "command": "python",
             "args": ["-m", "mcp_servers.django_project.server"],
-            # DOCKER_HOST explícito acá además de heredado del contenedor
-            # (docker-compose.yml ya lo setea) — mismo criterio que
-            # PYTHONPATH: no depender del comportamiento de merge/reemplazo
-            # de env no verificado a fondo entre el proceso del SDK y el
-            # subproceso stdio. Ver ADR-021, ADR-022.
-            "env": {"PYTHONPATH": REPO_ROOT, "DOCKER_HOST": "tcp://docker-proxy:2375"},
+            # DOCKER_HOST/ADMIN_TASKS_TOKEN explícitos acá además de
+            # heredados del contenedor (docker-compose.yml ya los setea) —
+            # mismo criterio que PYTHONPATH: no depender del comportamiento
+            # de merge/reemplazo de env no verificado a fondo entre el
+            # proceso del SDK y el subproceso stdio. Ver ADR-021, ADR-022,
+            # ADR-023.
+            "env": {
+                "PYTHONPATH": REPO_ROOT,
+                "DOCKER_HOST": "tcp://docker-proxy:2375",
+                "ADMIN_TASKS_TOKEN": os.environ.get("ADMIN_TASKS_TOKEN", ""),
+            },
         }
     },
     allowed_tools=[
         f"mcp__{MCP_SERVER_NAME}__git_status",
         f"mcp__{MCP_SERVER_NAME}__read_file",
         f"mcp__{MCP_SERVER_NAME}__restart_web",
+        f"mcp__{MCP_SERVER_NAME}__run_migrations",
+        f"mcp__{MCP_SERVER_NAME}__run_tests",
     ],
     cwd=REPO_ROOT,
 )

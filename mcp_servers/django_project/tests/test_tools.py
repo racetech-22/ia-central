@@ -12,6 +12,8 @@ funciones de Python funcionan sueltas.
 from __future__ import annotations
 
 import subprocess
+import urllib.error
+import urllib.request
 
 import anyio
 import docker
@@ -116,3 +118,55 @@ def test_proxy_rechaza_listar_y_crear_contenedores():
     with pytest.raises(docker.errors.APIError) as create_exc:
         client.containers.create("alpine", "true")
     assert create_exc.value.response.status_code == 403
+
+
+def test_admin_tasks_rechaza_sin_token_correcto():
+    """Adversarial, mismo espíritu que los de arriba — pero acá el "código
+    bajo prueba" es el sidecar `admin-tasks` (ver ADR-023), no una función
+    de este repo. Habla directo con el sidecar (urllib, sin pasar por
+    tools._call_admin_tasks) para no depender de que ADMIN_TASKS_TOKEN esté
+    seteado en este proceso — el punto es probar el rechazo del lado del
+    servidor con un token deliberadamente incorrecto, no el flujo feliz.
+    """
+    request = urllib.request.Request(
+        "http://admin-tasks:8100/run-migrations",
+        method="POST",
+        headers={"Authorization": "Bearer token-incorrecto-a-proposito"},
+    )
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        urllib.request.urlopen(request, timeout=10)
+    assert exc.value.code == 401
+
+
+def test_run_migrations_corre_contra_la_base_real():
+    """Contra la base de desarrollo real (no destructivo: reaplicar
+    migraciones ya aplicadas es un no-op de Django). Vía protocolo MCP real.
+    """
+
+    async def run():
+        async with create_connected_server_and_client_session(mcp) as session:
+            return await session.call_tool("run_migrations", {})
+
+    result = anyio.run(run)
+
+    assert not result.isError
+    text = result.content[0].text
+    assert "EXIT_CODE=0" in text
+
+
+def test_run_tests_corre_y_devuelve_salida_coherente():
+    """Hoy no hay tests propios de la app Django todavía — confirma que el
+    comando corre limpio ("0 tests"), no que falle por un error real. Vía
+    protocolo MCP real.
+    """
+
+    async def run():
+        async with create_connected_server_and_client_session(mcp) as session:
+            return await session.call_tool("run_tests", {})
+
+    result = anyio.run(run)
+
+    assert not result.isError
+    text = result.content[0].text
+    assert "EXIT_CODE=0" in text
+    assert "0 tests" in text.lower() or "no tests ran" in text.lower()
