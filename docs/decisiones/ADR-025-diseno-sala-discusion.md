@@ -158,7 +158,7 @@ Observación que conviene dejar asentada: el diseño ya era híbrido antes de es
 
 ## Consecuencias
 
-- Este documento es una ADR **en progreso**: no cierra el diseño de la sala, deja avanzada la dirección técnica de cinco decisiones concretas y deja explícitamente abiertos los puntos de abajo. Se espera revisarla/completarla en próximas conversaciones antes de empezar a construir.
+- Este documento es una ADR **en progreso**: no cierra el diseño de la sala, deja avanzada la dirección técnica y deja explícitamente abiertos los puntos de abajo. Se espera revisarla/completarla en próximas conversaciones antes de empezar a construir.
 - El puente de permisos (punto 1) es la pieza técnica crítica que ADR-024 ya había señalado como pendiente — queda con mecanismo confirmado (`can_use_tool` + `ToolPermissionContext`), pero sin implementar.
 - El requisito de "agente propio por destino externo" (punto 3) tiene una consecuencia práctica real: conectar un proyecto en un servidor externo o en la PC de Fernando implica instalar y correr un Claude Code real ahí, no solo registrar credenciales — el alcance de "conectar proyecto nuevo" (punto 5) incluye ese paso de instalación remota.
 
