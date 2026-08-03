@@ -26,3 +26,7 @@ Consecuencia directa sobre ADR-012: como LiteLLM proxifica peticiones autenticad
 - **La vía es explícitamente provisional.** Anthropic declaró que está reformulando el plan y que avisará antes de que algo tenga efecto. Si se revierte, hay que pasar a clave de API — y gracias a la frontera de ADR-012 eso es un cambio de configuración, no una reescritura. Esta ADR debería revisarse en cuanto Anthropic publique el nuevo esquema.
 - **La verificación de enrutado real del gateway queda pendiente indefinidamente.** No hay forma de probarla sin crédito de API, y con suscripción el gateway no está en el camino. Lo único probado hoy es que el contenedor levanta, queda `healthy` y no expone puerto (ya reflejado en CHANGELOG.md).
 - Pendiente (Fase 3): confirmar en la implementación del orquestador que la autenticación por suscripción funciona efectivamente desde dentro del contenedor, y no solo desde la sesión interactiva de Claude Code.
+
+## Enmienda 2026-08-03: pendiente resuelto — ver ADR-021
+
+El servicio real `orchestrator` de `docker-compose.yml` (ADR-021) confirma que la autenticación por suscripción funciona desde un contenedor persistente, no solo desde el contenedor descartable de prueba de ADR-017: `docker compose exec orchestrator python -c "from orchestrator import run; print(run('responde solo PONG'))"` devolvió `PONG` sin error de autenticación. El resto de esta ADR (vía provisional, riesgo de consumir cupo compartido, revisar si Anthropic cambia el esquema) sigue vigente sin cambios.

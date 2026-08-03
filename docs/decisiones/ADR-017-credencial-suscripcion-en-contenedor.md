@@ -43,3 +43,8 @@ Comparativamente: Claude Code ya corre en este mismo VPS con shell completo y es
 - **La condición del punto 2 hay que verificarla activamente, no confiarla a la memoria.** Es exactamente la clase de disciplina que ADR-012 ya reconoció que se diluye si nadie la vigila. Candidata natural a incorporarse a la auditoría semanal de ADR-014, o a un test que falle si alguna tool acepta rutas no acotadas.
 - Pendiente (Fase 3): implementar el montaje `:ro` y el UID parametrizado al crear el servicio del orquestador en `docker-compose.yml`.
 - Pendiente (Fase 3): al diseñar el primer MCP server, verificar explícitamente que ninguna tool de lectura acepta rutas arbitrarias, y dejar constancia de esa verificación.
+
+## Enmienda 2026-08-03: ambos pendientes resueltos
+
+- El montaje `:ro` y el UID parametrizado (`ORCHESTRATOR_UID`, sin cablear a un número fijo) ya están implementados en el servicio real `orchestrator` de `docker-compose.yml` — ver ADR-021.
+- La verificación de que ninguna tool de lectura acepta rutas arbitrarias ya se hizo, con constancia explícita, al diseñar `mcp_servers/django_project` (ver ADR-020): `security.py` es la autoridad única de esta condición, probada con 5 casos adversariales en `tests/test_security.py`. La condición del punto 2 de esta ADR deja de estar vacía — hoy hay una tool MCP real corriendo, acotada por esa verificación.
