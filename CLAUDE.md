@@ -139,13 +139,14 @@ Al cerrar cada tarea o fase de trabajo, evalúa brevemente si algo de lo ocurrid
 
 ## Fuente de verdad en vivo desde GitHub (ADR-011)
 
-Cualquier sesión con acceso a fetch web o shell (Cowork, claude.ai con búsqueda, Claude Code) debe leer en vivo `README.md`/`CLAUDE.md`/`ARQUITECTURA.md`/`CHANGELOG.md`/`docs/decisiones/ADR-*.md` desde `https://raw.githubusercontent.com/racetech-22/ia-central/master/<path>`, en vez de depender de Knowledge/Files subidos a mano o copias en Drive (se desactualizan en cada commit).
+Cualquier sesión con acceso a fetch web o shell (Cowork, claude.ai con búsqueda, Claude Code) debe leer en vivo `README.md`/`CLAUDE.md`/`ARQUITECTURA.md`/`CHANGELOG.md`/`docs/decisiones/ADR-*.md`/`docs/decisiones/INDEX.md`, en vez de depender de Knowledge/Files subidos a mano o copias en Drive (se desactualizan en cada commit).
 
-Dos capas de caché independientes a tener en cuenta (ver enmienda en ADR-011):
-- Agregar siempre un parámetro único a la URL (`?v=<sha-del-commit-o-timestamp>`) — evita que la propia herramienta de fetch reuse una respuesta ya cacheada dentro de la sesión (verificado: al menos la de Cowork deduplica por URL exacta hasta 900s).
-- Aun así, el CDN de GitHub puede tardar hasta ~5 minutos en reflejar un push recién hecho, y el query param no evita esto (verificado: el CDN ignora el query string para su propio caché). Un fetch que responde 200 no garantiza que sea el último commit — si se acaba de pushear algo, esperar un par de minutos antes de asumirlo.
+**Protocolo de dos pasos, anclado a un SHA — no a `?v=` sobre la rama** (ver enmienda 2026-08-03 a ADR-011; el `?v=` anterior quedó reemplazado, no complementado, porque se verificó que puede fallar en silencio: el CDN de GitHub puede ignorar el query string para su cache key y devolver contenido desactualizado sin ningún indicio de error):
 
-**Los nombres de archivo de las ADR no son deducibles** (`ADR-NNN.md` es incorrecto — cada una lleva un slug descriptivo, ver ADR-011 enmienda 2026-08-02). Antes de pedir una ADR puntual, leer primero `docs/decisiones/INDEX.md` (misma ruta fija, mismo mecanismo de `?v=<único>`) para resolver el nombre real. Si no hay acceso a navegador y `INDEX.md` no puede leerse por algún motivo, no asumir un nombre — reportar el bloqueo en vez de adivinar.
+1. Pedir `https://api.github.com/repos/racetech-22/ia-central/commits/master` (o la rama que corresponda) para obtener el SHA real y actual del HEAD.
+2. Pedir cada archivo vía `https://raw.githubusercontent.com/racetech-22/ia-central/<SHA>/<path>`, con ese SHA exacto — nunca con el nombre de la rama. El contenido de un SHA fijo es inmutable, así que no hace falta ningún cache-busting adicional: aunque el CDN lo cachee para siempre, sigue siendo el contenido correcto por definición.
+
+**Los nombres de archivo de las ADR no son deducibles** (`ADR-NNN.md` es incorrecto — cada una lleva un slug descriptivo, ver ADR-011 enmienda 2026-08-02). Antes de pedir una ADR puntual, leer primero `docs/decisiones/INDEX.md` con el mismo protocolo de dos pasos de arriba, para resolver el nombre real. Si no hay acceso a navegador y `INDEX.md` no puede leerse por algún motivo, no asumir un nombre — reportar el bloqueo en vez de adivinar.
 
 ## Metodología de trabajo con Fernando (cualquier sesión: Cowork, Claude Desktop, Claude Code)
 

@@ -47,3 +47,18 @@ Esto agrava el problema ya documentado en la enmienda anterior: el fallback natu
 **Decisión**: se agrega `docs/decisiones/INDEX.md`, en ruta fija, con una tabla ADR → nombre de archivo. Cualquier sesión fetch-only debe leer ese índice primero (mismo mecanismo de cache-busting que el resto: `?v=<único>`) y de ahí construir la URL real de cada ADR, en vez de asumir el patrón `ADR-NNN.md`. Se agrega la instrucción correspondiente a CLAUDE.md.
 
 **Mantenimiento**: `INDEX.md` se actualiza en el mismo commit que agrega cualquier ADR nueva — mismo hábito ya exigido para ARQUITECTURA.md §6 y CHANGELOG.md, no un paso adicional real. Vale la pena agregarlo explícitamente al alcance de `scripts/adr_audit.sh` (ADR-014) la próxima vez que se toque ese script.
+
+## Enmienda (2026-08-03): el cache-busting con `?v=` ya no es confiable — reemplazado, no complementado
+
+Hallazgo en vivo durante la revisión de ADR-021: tres pedidos consecutivos a `raw.githubusercontent.com` con un parámetro `?v=<timestamp único cada vez>` en cada uno devolvieron el mismo contenido desactualizado, con header `x-cache: HIT` y `source-age` creciente (42s, 44s, 46s) — el CDN de GitHub (Fastly) está ignorando el query string para el cálculo de la clave de caché en esta ruta, al menos en esta fecha. Esto contradice directamente lo que la enmienda del 2026-08-01 documentó como mitigación de la capa (b) (deduplicación del lado del cliente) — el mecanismo sigue sirviendo para esa capa específica, pero ya no es un método confiable en general: puede fallar en silencio, sin ningún indicio de que el contenido devuelto no es el actual.
+
+Lo que sí se verificó confiable en la misma sesión: `api.github.com/repos/racetech-22/ia-central/commits/<rama-o-master>` devuelve el SHA real del HEAD sin el mismo problema de staleness.
+
+**Nuevo protocolo — reemplaza al de `?v=`, no lo complementa:**
+
+1. Pedir primero `https://api.github.com/repos/racetech-22/ia-central/commits/<rama-o-master>` para obtener el SHA real y actual del commit.
+2. Pedir el archivo vía `https://raw.githubusercontent.com/racetech-22/ia-central/<SHA>/<ruta>` — anclado al SHA exacto, **nunca al nombre de la rama**. El contenido de un SHA fijo es inmutable: aunque el CDN lo cachee para siempre, sigue siendo correcto por definición. No hace falta ningún cache-busting contra una URL anclada a un commit específico, porque no hay nada que "vencer" — esa URL nunca va a servir otro contenido.
+
+Esto también resuelve, de paso, la lectura de `docs/decisiones/INDEX.md` y de cualquier ADR puntual: se piden con el mismo SHA obtenido en el paso 1, no con `?v=` sobre la URL de `master`.
+
+La limitación de la enmienda anterior sobre `api.github.com/repos/.../contents/...` (devuelve vacío desde el fetch de Cowork) sigue vigente y no se ve afectada: el endpoint nuevo que se usa acá es `/commits/<ref>`, no `/contents/...` — son rutas distintas de la misma API, verificar cada una por separado antes de asumir que comparten el mismo problema.
