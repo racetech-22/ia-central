@@ -124,7 +124,7 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
    Pendiente (Fase 3):
 
-   - `web` pasa de WSGI a ASGI (servidor ASGI a elegir y pinear con el criterio conservador de ADR-020).
+   - `web` pasa de WSGI a ASGI, corriendo `daphne==4.2.3` (ver ADR-026) en vez de `runserver`.
    - `channels` (`4.3.2` al momento de escribir esto) y `channels_redis`, ambos con pin exacto.
    - Servicio `redis` nuevo en `docker-compose.yml`: imagen pineada, sin `ports:`, solo red interna de Docker — mismo criterio que corrigió la exposición de `db`/`web` (enmienda 2026-08-02 a ADR-003).
    - Nginx: cabeceras `Upgrade`/`Connection` y `proxy_read_timeout` mayor al intervalo de heartbeat.

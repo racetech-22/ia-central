@@ -31,3 +31,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-023 | ADR-023-sidecar-admin-tasks.md |
 | ADR-024 | ADR-024-vision-ampliada-multi-proyecto.md |
 | ADR-025 | ADR-025-diseno-sala-discusion.md |
+| ADR-026 | ADR-026-servidor-asgi-daphne.md |
