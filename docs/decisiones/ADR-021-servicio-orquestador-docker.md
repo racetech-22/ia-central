@@ -71,3 +71,13 @@ Investigación acotada de las cuatro tools que quedaron documentadas arriba como
 **Por qué no se aplica igual como fix ahora**: `DesignSync` tiene efecto real confirmado (no es un caso de "tools inertes, aplicar `disallowed_tools` como defensa en profundidad"). Que `disallowed_tools` funcione técnicamente no resuelve por sí solo si es la mitigación correcta a largo plazo — por ejemplo, no hay garantía de que esta lista de cuatro sea exhaustiva ni de que una versión futura del CLI no agregue una quinta tool de plataforma con el mismo problema. Queda como decisión pendiente de Fernando, no aplicada unilateralmente en este commit.
 
 **Bloqueante**: hasta que se decida qué hacer con este hallazgo, el orquestador **no debe recibir lógica de negocio real** (ningún prompt que dependa de que el modelo actúe con autonomía real sobre el repo o el sistema) — el riesgo concreto es que, sin ninguna instrucción explícita del operador, el modelo tenga acceso a `DesignSync` (filtrar contenido del repo a un proyecto de diseño externo) o `RemoteTrigger` (programar disparadores propios en la nube), ninguno de los dos parte del diseño de ADR-015/ADR-020/ADR-021.
+
+## Enmienda 2026-08-03 (más tarde el mismo día): mitigación aplicada — `disallowed_tools`, no exhaustiva ni definitiva
+
+Fernando decidió aplicar la mitigación ya verificada más arriba, en vez de dejarla solo documentada como pendiente: `orchestrator/orchestrator.py` agrega `disallowed_tools=["DesignSync", "Monitor", "PushNotification", "RemoteTrigger"]` a `ClaudeAgentOptions`, como capa aparte de `tools=[]` (no redundante — `tools=[]` no sacaba estas cuatro, `disallowed_tools` sí).
+
+Reverificado end-to-end después del cambio:
+- `SystemMessage` inicial: `'tools': []` — las cuatro ya no aparecen listadas en absoluto (no solo bloqueadas para invocar).
+- Los tres prompts de siempre (PONG, `git_status`, `read_file`) devolvieron el resultado esperado sin ningún error.
+
+**Esto no cierra el hallazgo, lo mitiga.** Queda explícito, acá y en `docs/DEPENDENCIAS.md`, que esta lista de cuatro nombres **no está garantizada exhaustiva**: no hay ninguna señal automática de que una versión futura de `claude-agent-sdk`/CLI agregue una quinta tool de plataforma con el mismo problema (lectura de filesystem local + escritura a un destino externo a la cuenta, o cualquier otro efecto real fuera del control de `security.py`). Revisar esta lista en cada bump de versión del SDK queda como tarea de mantenimiento explícita, no automatizada. La marca de "bloqueante para lógica de negocio real" de la enmienda anterior se reduce a **"mitigado, seguir revisando en cada actualización"** — no se levanta la cautela por completo, pero deja de ser un impedimento duro para avanzar con esta pieza de infraestructura.

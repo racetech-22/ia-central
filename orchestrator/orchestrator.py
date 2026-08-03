@@ -19,10 +19,23 @@ lista de tools ES la política de seguridad (ADR-015). Se probó listar acá
 cuenta) pero no apareció disponible en la sesión aunque se la nombrara
 explícitamente; se resuelve en cambio con el polling determinista de
 `_wait_for_mcp_ready()` más abajo, cableado en Python, no una decisión del
-modelo. Hallazgo residual sin resolver (ver ADR-021): incluso con `tools=[]`,
-cuatro tools de plataforma (`DesignSync`, `Monitor`, `PushNotification`,
-`RemoteTrigger`) siguen apareciendo disponibles — ninguna da acceso a
-filesystem ni shell.
+modelo.
+
+`disallowed_tools=[...]` es una CAPA APARTE, no redundante con `tools=[]`:
+`tools=[]` solo saca las tools built-in "interactivas" (Bash, Read, Write,
+etc.), pero verificado en la práctica que cuatro tools de plataforma/cuenta
+(`DesignSync`, `Monitor`, `PushNotification`, `RemoteTrigger`) seguían
+apareciendo disponibles en el `SystemMessage` aunque `tools=[]` estuviera
+puesto. De las cuatro, `DesignSync` se confirmó con efecto real, no inerte
+(ver enmienda 2026-08-03 a ADR-021): puede leer archivos del filesystem local
+y subirlos a un proyecto externo en `claude.ai/design`, sin pasar por
+`security.py` ni por ninguna tool MCP de este proyecto — `Monitor` y
+`RemoteTrigger` tampoco están confirmadas como inertes. `disallowed_tools` sí
+las saca del `SystemMessage` por completo (verificado). Mitigación aplicada
+a pedido explícito de Fernando, con la salvedad de que esta lista de cuatro
+**no es exhaustiva a futuro** — revisar en cada actualización de
+`claude-agent-sdk`/CLI si aparece una tool de plataforma nueva con el mismo
+problema (ver `docs/DEPENDENCIAS.md`).
 
 `strict_mcp_config=True` es necesario porque, verificado en la práctica, sin
 este flag el SDK no se limita al `mcp_servers` de acá abajo — también carga
@@ -43,6 +56,10 @@ MCP_READY_TIMEOUT_S = 15.0
 
 _OPTIONS = ClaudeAgentOptions(
     tools=[],
+    # Capa aparte de tools=[]: saca 4 tools de plataforma/cuenta que tools=[]
+    # no toca (DesignSync, con efecto real confirmado — ver enmienda 2026-08-03
+    # a ADR-021). No exhaustivo a futuro: revisar en cada bump de versión.
+    disallowed_tools=["DesignSync", "Monitor", "PushNotification", "RemoteTrigger"],
     strict_mcp_config=True,
     mcp_servers={
         MCP_SERVER_NAME: {
