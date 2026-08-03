@@ -21,6 +21,12 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
 5. **Cómo se conecta un proyecto nuevo**: no se automatiza la creación de la cuenta de Claude ni la creación del servidor — eso lo sigue haciendo Fernando manualmente, fuera de IA CENTRAL, como siempre. Lo que sí se automatiza: una herramienta/pantalla en el panel ("conectar proyecto nuevo") donde Fernando completa las credenciales necesarias (clave SSH, host, clave de API, etc.) y la herramienta arma la conexión — instala el agente remoto si hace falta, registra el proyecto — sin pasos manuales de terminal de por medio.
 
+6. **Autenticación por proyecto — resuelto: Workspaces de Anthropic, uno por proyecto.** Verificado contra la documentación oficial vigente: "Organize API keys, manage team access, and control costs with workspaces" y explícitamente "Project-based organization: Create workspaces for specific projects or products to track usage and costs separately." Cada workspace tiene su propia clave de API (encerrada a los recursos de ese workspace), su propio límite de gasto mensual, su propio límite de tasa, y métricas de uso/costo consultables por separado vía `workspace_id`.
+
+   Flujo acordado: Fernando crea el workspace y la clave de API a mano en la Consola de Anthropic (Settings > Workspaces > Create workspace, con su límite de gasto) — nada de esto se automatiza. Esa clave es la que se pega en la herramienta de "conectar proyecto nuevo" de la sala (ver punto 5 de las decisiones encaminadas). El orquestador de IA CENTRAL en el propio VPS sigue con autenticación por suscripción por ahora (ADR-016) — no se fuerza la migración de lo ya construido, esto aplica a los proyectos nuevos que se sumen desde la sala.
+
+   Esto también resuelve, de paso, el aislamiento de cupo que ADR-016 ya había advertido como riesgo: cada proyecto nuevo queda con su propio límite de gasto, sin competir por la suscripción personal de Fernando ni por el cupo de otros proyectos. Y da, sin trabajo adicional, la base para la visibilidad de costos por proyecto de la visión original de IA CENTRAL (README.md): la API de Uso y Costo de Anthropic ya permite filtrar por `workspace_id`.
+
 ## Alternativas descartadas
 
 - **Centralizar la ejecución en el VPS de IA CENTRAL y acceder a proyectos externos por SSH/API directo, sin agente propio en cada destino**: descartado — el SDK no tiene transporte remoto nativo (verificado, punto 3), y un mecanismo de acceso remoto genérico construido a mano reabriría exactamente el tipo de superficie de riesgo que ADR-015/ADR-022 evitaron con cuidado para el orquestador local.
@@ -35,7 +41,6 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
 ## Abierto, no resuelto
 
-- **Qué tipo de credencial pedirle a Fernando en el formulario de "conectar proyecto nuevo"**: la creación de la credencial en sí (login de suscripción o clave de API) siempre es manual, hecha por Fernando fuera de IA CENTRAL — igual que la cuenta de Anthropic y el servidor mismo (ver punto 5 más arriba); la herramienta solo toma una credencial ya creada y arma la conexión, nunca crea cuentas ni claves por su cuenta. La pregunta abierta es cuál de las dos pedirle: la misma suscripción de Fernando (login, más simple, pero con riesgo de cupo compartido entre proyectos, ya advertido en ADR-016) o una clave de API separada por proyecto vía el gateway LiteLLM de ADR-012 (aísla el cupo de cada proyecto, pero cada clave la crea Fernando a mano en la Consola de Anthropic). Ninguna decisión tomada todavía.
 - Protocolo exacto de conexión saliente del agente remoto hacia IA CENTRAL (websocket, polling, algo del propio SDK) — no diseñado.
 - Esquema exacto de base de datos para proyectos/chats/sesiones — no diseñado, solo la idea general (`SessionStore` propio sobre Postgres).
 - Pantalla exacta del panel para "conectar proyecto nuevo" — no diseñada.
