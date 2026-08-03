@@ -66,12 +66,18 @@ _OPTIONS = ClaudeAgentOptions(
             "type": "stdio",
             "command": "python",
             "args": ["-m", "mcp_servers.django_project.server"],
-            "env": {"PYTHONPATH": REPO_ROOT},
+            # DOCKER_HOST explícito acá además de heredado del contenedor
+            # (docker-compose.yml ya lo setea) — mismo criterio que
+            # PYTHONPATH: no depender del comportamiento de merge/reemplazo
+            # de env no verificado a fondo entre el proceso del SDK y el
+            # subproceso stdio. Ver ADR-021, ADR-022.
+            "env": {"PYTHONPATH": REPO_ROOT, "DOCKER_HOST": "tcp://docker-proxy:2375"},
         }
     },
     allowed_tools=[
         f"mcp__{MCP_SERVER_NAME}__git_status",
         f"mcp__{MCP_SERVER_NAME}__read_file",
+        f"mcp__{MCP_SERVER_NAME}__restart_web",
     ],
     cwd=REPO_ROOT,
 )

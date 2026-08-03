@@ -36,14 +36,39 @@ services:
       retries: 3
       start_period: 20s
 
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.2
+    restart: always
+    privileged: true
+    environment:
+      # Todo lo no listado acá queda en su default (0/deshabilitado) — ver
+      # ADR-022. Solo se habilita lo estrictamente necesario para
+      # restart_web(): reiniciar un contenedor ya existente por nombre fijo.
+      # Deliberadamente NO se habilita CONTAINERS (expondría crear/borrar
+      # contenedores, no solo exec/restart — ver ADR-022, motivo por el que
+      # run_migrations/run_tests quedan fuera de esta entrega) ni IMAGES,
+      # VOLUMES, BUILD, EXEC, ni ningún otro.
+      POST: 1
+      ALLOW_RESTARTS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Sin ports: — solo alcanzable por la red interna de Docker, nunca
+    # publicado al host (a diferencia de ntfy, que sí lo necesita).
+
   orchestrator:
     build:
       context: ./orchestrator
       args:
         ORCHESTRATOR_UID: ${ORCHESTRATOR_UID:-1001}
     restart: always
+    depends_on:
+      - docker-proxy
     environment:
       PYTHONPATH: /app
+      # El SDK de docker (orchestrator/tools o mcp_servers/django_project)
+      # habla con el proxy, nunca con /var/run/docker.sock directo — ver
+      # ADR-022.
+      DOCKER_HOST: tcp://docker-proxy:2375
     volumes:
       # Credencial de suscripción de Claude Code, solo lectura (ver ADR-016,
       # ADR-017, ADR-021). El UID del usuario del contenedor (build arg de

@@ -1,10 +1,7 @@
-"""Entrypoint MCP del proyecto Django de IA CENTRAL (ver ADR-020).
+"""Entrypoint MCP del proyecto Django de IA CENTRAL (ver ADR-020, ADR-021, ADR-022).
 
-Standalone: no hay ningún orquestador corriendo todavía (confirmado en la
-auditoría de solo lectura del 2026-08-02), así que este server no tiene
-wiring a ningún servicio real — se construye y se prueba de forma aislada,
-vía mcp.shared.memory.create_connected_server_and_client_session (ver
-tests/test_tools.py), no con un cliente MCP real.
+Ya conectado al servicio real `orchestrator` de docker-compose.yml (ver
+ADR-021) — corre como subproceso stdio dentro de ese contenedor.
 
 Patrón verificado contra el código fuente oficial de mcp==1.29.0
 (examples/fastmcp/*.py en el tag v1.29.0 del repo modelcontextprotocol/python-sdk).
@@ -27,6 +24,12 @@ def git_status() -> str:
 def read_file(path: str) -> str:
     """Lee un archivo dentro de la raíz del repo, validado contra security.py."""
     return tools.read_file(path)
+
+
+@mcp.tool()
+def restart_web() -> str:
+    """Reinicia el contenedor `web` (nombre fijo). Sin parámetros. Ver ADR-022."""
+    return tools.restart_web()
 
 
 if __name__ == "__main__":

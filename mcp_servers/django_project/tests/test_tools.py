@@ -14,12 +14,21 @@ from __future__ import annotations
 import subprocess
 
 import anyio
+import docker
 import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
 from mcp_servers.django_project import tools
 from mcp_servers.django_project.security import PathSecurityError
 from mcp_servers.django_project.server import mcp
+
+# Nombre de un contenedor descartable, creado FUERA de este proceso de test
+# (desde el host, con acceso real al socket de Docker) antes de correr esta
+# suite, y borrado después — ver docs de ADR-022. El proxy deliberadamente no
+# permite crear contenedores desde acá (CONTAINERS deshabilitado), así que
+# pytest no puede crearlo por su cuenta; probar restart_web() contra el
+# `ia-central-web-1` real reiniciaría el servicio de verdad durante un test.
+RESTART_TEST_CONTAINER_NAME = "ia-central-test-restart-target"
 
 
 def test_git_status_coherente_con_el_repo(tmp_path, monkeypatch):
@@ -70,3 +79,40 @@ def test_read_file_bloqueado_propaga_error_no_contenido_parcial(tmp_path, monkey
     # por error sí haría fallar este test.
     with pytest.raises(PathSecurityError):
         tools.read_file(".env")
+
+
+def test_restart_web_reinicia_un_contenedor_real(monkeypatch):
+    """Contra un contenedor descartable (ver RESTART_TEST_CONTAINER_NAME),
+    nunca contra `ia-central-web-1` — este test no debe reiniciar el web
+    real. Vía protocolo MCP real, igual que git_status/read_file, para
+    confirmar que la tool está correctamente registrada e invocable.
+    """
+    monkeypatch.setattr(tools, "WEB_CONTAINER_NAME", RESTART_TEST_CONTAINER_NAME)
+
+    async def run():
+        async with create_connected_server_and_client_session(mcp) as session:
+            return await session.call_tool("restart_web", {})
+
+    result = anyio.run(run)
+
+    assert not result.isError
+    assert RESTART_TEST_CONTAINER_NAME in result.content[0].text
+
+
+def test_proxy_rechaza_listar_y_crear_contenedores():
+    """Adversarial, mismo espíritu que los 5 casos de security.py en ADR-020
+    — pero acá el "código bajo prueba" es la configuración del proxy
+    (docker-proxy en docker-compose.yml, ver ADR-022), no una función de
+    este repo. Confirma en vivo que `CONTAINERS` sigue deshabilitado: si
+    este test empieza a fallar, alguien habilitó más de lo que ADR-022
+    autoriza (solo POST + ALLOW_RESTARTS).
+    """
+    client = docker.from_env()
+
+    with pytest.raises(docker.errors.APIError) as list_exc:
+        client.containers.list()
+    assert list_exc.value.response.status_code == 403
+
+    with pytest.raises(docker.errors.APIError) as create_exc:
+        client.containers.create("alpine", "true")
+    assert create_exc.value.response.status_code == 403

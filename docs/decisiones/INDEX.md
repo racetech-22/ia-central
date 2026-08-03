@@ -27,3 +27,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-019 | ADR-019-inventario-dependencias-externas.md |
 | ADR-020 | ADR-020-primer-mcp-server-django.md |
 | ADR-021 | ADR-021-servicio-orquestador-docker.md |
+| ADR-022 | ADR-022-segunda-tanda-mcp-docker-proxy.md |
