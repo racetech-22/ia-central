@@ -16,7 +16,7 @@ trap 'rm -f "$output_file"' EXIT
 
 echo "===== $(date -Iseconds) adr audit =====" >> "$LOG_FILE"
 
-timeout 300 "$CLAUDE_BIN" -p "Revisá todos los archivos docs/decisiones/ADR-*.md de este repo y verificá que digan la verdad sobre el estado real del repositorio, aplicando esta convención de redacción (ver CLAUDE.md, sección 'Cómo mantener la documentación'): el presente ('se agrega', 'existe', 'corre', 'queda configurado') se reserva para artefactos que ya existen en el repo al momento de escribir la ADR. Una afirmación sobre algo NO implementado todavía debe estar marcada explícitamente como pendiente (ej. 'Pendiente (Fase 3): ...') o expresada en futuro/condicional con una fase explícita (ej. 'se migrará en Fase 5', 'deben migrar a Fase 5').
+timeout 600 "$CLAUDE_BIN" -p "Revisá todos los archivos docs/decisiones/ADR-*.md de este repo y verificá que digan la verdad sobre el estado real del repositorio, aplicando esta convención de redacción (ver CLAUDE.md, sección 'Cómo mantener la documentación'): el presente ('se agrega', 'existe', 'corre', 'queda configurado') se reserva para artefactos que ya existen en el repo al momento de escribir la ADR. Una afirmación sobre algo NO implementado todavía debe estar marcada explícitamente como pendiente (ej. 'Pendiente (Fase 3): ...') o expresada en futuro/condicional con una fase explícita (ej. 'se migrará en Fase 5', 'deben migrar a Fase 5').
 
 Para cada afirmación de tipo 'se agrega/crea/modifica/existe X' (un archivo, una sección de código, una configuración) en cualquier ADR, clasificala en una de estas tres categorías:
 
