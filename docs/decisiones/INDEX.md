@@ -29,3 +29,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-021 | ADR-021-servicio-orquestador-docker.md |
 | ADR-022 | ADR-022-segunda-tanda-mcp-docker-proxy.md |
 | ADR-023 | ADR-023-sidecar-admin-tasks.md |
+| ADR-024 | ADR-024-vision-ampliada-multi-proyecto.md |

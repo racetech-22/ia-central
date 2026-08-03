@@ -4,10 +4,11 @@ Documento maestro. Se actualiza cada vez que se toma una decisión relevante. Cu
 
 ## 1. Principio rector
 
-Todo lo que se construya debe cumplir dos condiciones simultáneas:
+Todo lo que se construya debe cumplir tres condiciones simultáneas:
 
 1. Portable: transferible por completo a otro servidor sin perder base de conocimiento ni funcionalidad.
 2. Verificable: el conocimiento que el sistema acumula por sí mismo (auto-aprendizaje) solo se considera válido cuando pasa por un proceso explícito de verificación, nunca por defecto.
+3. **Configurable desde el panel, nunca enyesado en archivos de código versionado** (ver ADR-024): cualquier variable que pueda cambiar según caso/situación/proyecto debe administrarse desde una pestaña del panel administrativo (Fase 5, ADR-013), no requerir un commit para cambiarla. **Pendiente (Fase 5):** el panel todavía no existe; el principio aplica de acá en adelante a todo lo que se construya, no solo a permisos.
 
 El punto 1 cubre **portabilidad de servidor** (ADR-001: mover todo a otro VPS sin perder conocimiento). **Portabilidad de proveedor** — no quedar acoplado a un único proveedor de modelos — es un requisito distinto, resuelto en ADR-012 (gateway LiteLLM + framework de agente como capa reemplazable detrás de una interfaz interna).
 
@@ -25,6 +26,11 @@ Memoria de largo plazo del sistema, independiente del servidor físico donde cor
 - Base de datos vectorial para RAG (pgvector sobre Postgres, o Qdrant si se separa).
 - Log de decisiones (ADRs) y documento maestro versionados en Git.
 - Pipeline de verificación: captura, verificación (cruce de fuentes o confirmación de Fernando), promoción a conocimiento confirmado. Nada entra a la base de conocimiento "confirmado" sin pasar por este proceso.
+
+Pilar central de la visión ampliada de ADR-024, no un detalle: los dos roles de la sala de discusión (ver más abajo) deben compartir esta misma memoria por proyecto, no operar cada uno con contexto aislado. **Pendiente (Fase 3, arranque simple / Fase 5, RAG completo):** hoy no existe ni el historial de conversación en Postgres ni la base vectorial — arranca simple (historial de conversación, una vez que exista la persistencia de ADR-013) y crece en paralelo al resto de los pilares de ADR-024, priorizado en tercer lugar.
+
+### Sala de discusión: planificador + ejecutor + Fernando (ADR-024)
+**Pendiente (forma mínima: Fase 3 — sin persistencia, reusando el orquestador y las tools de hoy; forma final: Fase 5 — persistida en Django/Postgres dentro del panel, ver ADR-013).** Arquitectura de dos roles conversando, con Fernando como decisor final: un rol planificador (conversacional, similar al uso actual de Cowork) y un rol ejecutor (con tools reales, equivalente al orquestador de ADR-021), los tres en una misma ventana de chat. Formaliza dentro de IA CENTRAL el patrón que hoy requiere que Fernando relaye manualmente entre Cowork y la sesión `iac` de Claude Code. Primer pilar en el orden de prioridad de ADR-024 — la única de las cinco piezas de esa visión que ya tiene casi toda su base construida (ADR-020, ADR-022, ADR-023), así que puede arrancar en su forma mínima sin esperar al motor de confianza/permisos unificado (segundo pilar en prioridad, ver ADR-024) ni ampliar el catálogo de tools existente: el catálogo fijo de hoy (ADR-015) ya es límite de seguridad suficiente para esta forma mínima.
 
 ### Capa de ejecución
 Los conectores que le dan al agente poder real sobre el mundo:
@@ -63,6 +69,16 @@ El panel administrativo es un panel de control (costos, modelos activos, salud d
 
 Fase 3 y 4 corren headless: conectores MCP + orquestador, sin interfaz web propia. La interfaz de trabajo en esas fases es Claude Code en la sesión tmux `iac` (ver CLAUDE.md), más logs y marcas de estado — no producen nada visible en el navegador, y eso es esperado, no un síntoma de que no avanza. Ver ADR-013.
 
+**Orden de prioridad de la visión ampliada (ADR-024)**, dentro de las fases ya existentes, sin renumerarlas:
+
+1. Sala de discusión de a tres, forma mínima (§2) — Fase 3, con la infraestructura ya construida.
+2. Motor de confianza/permisos unificado — sin fase fija todavía: se dispara cuando se amplíe el catálogo de tools del ejecutor más allá de lo ya construido en ADR-020/022/023, no antes.
+3. Memoria/RAG profundo (§2) — creciendo en paralelo, arrancando simple en cuanto exista alguna persistencia de conversación (Fase 5, ADR-013).
+4. Panel administrativo completo (§4) — Fase 5, naciendo pantalla por pantalla a medida que cada pilar de arriba lo necesite, no de antemano.
+5. Orquestación multi-modelo con debate — Fase 4, al final deliberadamente: la pieza más compleja de las cinco.
+
+Ver ADR-024 para el contexto y la justificación completa de este orden.
+
 ## 6. Registro de decisiones
 
 Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo en este archivo.
@@ -90,3 +106,4 @@ Cada decisión importante se documenta como una ADR en docs/decisiones/, no solo
 - ADR-021: Servicio `orchestrator` real en `docker-compose.yml` — cableado mínimo, sin lógica de negocio ni disparador automático. Autentica por suscripción (cierra el pendiente de ADR-016) y conecta al MCP server de ADR-020 por subproceso stdio (cierra la condición de ADR-017). `tools=[]` como política de seguridad, `strict_mcp_config=True` para no heredar conectores de la cuenta real, `disallowed_tools` como capa aparte para tools de plataforma que `tools=[]` no cubre.
 - ADR-022: Segunda tanda de tools con efectos reales — `restart_web`, vía proxy de la API de Docker (`tecnativa/docker-socket-proxy`) en vez de montar el socket directo. `run_migrations`/`run_tests` quedan fuera: el proxy no puede aislar `exec` de crear/borrar contenedores nuevos.
 - ADR-023: Tercera tanda — `run_migrations`/`run_tests`, vía un sidecar propio (`admin-tasks`, misma imagen que `web`) que no toca Docker en absoluto, en vez de forzar `exec` a través del proxy de ADR-022.
+- ADR-024: Visión ampliada de IA CENTRAL — cinco pilares (memoria compartida, panel-configurable-siempre, motor de permisos unificado, sala de discusión planificador/ejecutor/Fernando, multi-modelo con debate) y su orden de prioridad. Documento de visión y orden, no de diseño técnico — cada pilar amerita su propia ADR al tocarle el turno.
