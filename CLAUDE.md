@@ -29,12 +29,13 @@ No hay todavía un linter/formatter configurado (ni pre-commit, ni ruff/black en
 
 ### Rutina de mantenimiento (cron del sistema, no rutinas de sesión)
 
-Ambos jobs son cron del sistema operativo (`crontab -l` del usuario `fernando`, sin sudo) — a propósito, no rutinas de sesión de Claude Code (`CronCreate`), que se pierden en cuanto termina la sesión que las creó.
+Los tres jobs son cron del sistema operativo (`crontab -l` del usuario `fernando`, sin sudo) — a propósito, no rutinas de sesión de Claude Code (`CronCreate`), que se pierden en cuanto termina la sesión que las creó.
 
 - **Diario, 03:00** — `scripts/backup_postgres.sh` (ver ADR-004): `pg_dump` + gzip a `/home/fernando/backups/postgres/` (fuera del repo, 14 días de retención) y sync a Google Drive vía `rclone` (implementación **interina**, ver ADR-005 — a reemplazar cuando exista el panel administrativo de Fase 5). Deja marcas `BACKUP_STATUS=OK|FAILED` / `RCLONE_STATUS=OK|FAILED|SKIPPED` en `backup.log`, exit code 0/1/2 según qué falló.
 - **Mensual, día 1 a las 04:15** — `scripts/memory_audit.sh`: corre `claude -p` en modo no interactivo (`--allowedTools "Read,Glob,Grep"`, sin permiso de escritura — solo lee, nunca modifica ni borra memoria) pidiéndole que revise la auto-memoria de este proyecto (qué hay guardado, si algo está duplicado o desactualizado respecto al repo) y deja el resultado en `/home/fernando/memory-audit.log`, con `AUDIT_STATUS=OK|FAILED` al final de cada corrida.
+- **Semanal, domingos a las 04:45** — `scripts/adr_audit.sh` (ver ADR-014): corre `claude -p` en modo no interactivo (`--allowedTools "Read,Glob,Grep"`, sin permiso de escritura — solo lee, nunca modifica ni borra nada) verificando que las `docs/decisiones/ADR-*.md` digan la verdad sobre el estado real del repo, que `docs/decisiones/INDEX.md` coincida con los archivos reales, y que cada ADR sea internamente coherente consigo misma (referencias "punto N"/"§N"/"ADR-NNN" y conteos en palabras que describan listas propias del mismo documento). Deja el resultado en `/home/fernando/adr-audit.log`, con `ADR_AUDIT_STATUS=OK|FAILED` (si la llamada a `claude -p` corrió sin error) y `ADR_CONTENT_STATUS=CLEAN|DISCREPANCIES_FOUND` (si encontró algo) al final de cada corrida.
 
-Para correr cualquiera de los dos a mano: `bash scripts/backup_postgres.sh` o `bash scripts/memory_audit.sh` desde la raíz del repo.
+Para correr cualquiera de los tres a mano: `bash scripts/backup_postgres.sh`, `bash scripts/memory_audit.sh` o `bash scripts/adr_audit.sh` desde la raíz del repo.
 
 ### Reconectar a esta sesión de trabajo en el VPS
 
