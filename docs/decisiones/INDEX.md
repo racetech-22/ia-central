@@ -30,3 +30,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-022 | ADR-022-segunda-tanda-mcp-docker-proxy.md |
 | ADR-023 | ADR-023-sidecar-admin-tasks.md |
 | ADR-024 | ADR-024-vision-ampliada-multi-proyecto.md |
+| ADR-025 | ADR-025-diseno-sala-discusion.md |
