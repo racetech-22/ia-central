@@ -86,7 +86,7 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
    Es la parte del protocolo donde se decide si el sistema es confiable o no.
 
    1. En el destino se dispara `can_use_tool`. Genera `request_id`, emite `permission_request` y queda esperando con timeout.
-   2. IA CENTRAL, al recibirla, primero persiste la fila SolicitudPermiso en estado pendiente, y recién después la empuja al navegador de Fernando. El orden importa: persistir antes de notificar es lo que hace que el paso 5 funcione.
+   2. IA CENTRAL, al recibirla, primero persiste la fila SolicitudPermiso en estado pendiente, y recién después la empuja al navegador de Fernando. El orden importa: persistir antes de notificar es lo que hace que el primer modo de falla de la tabla se resuelva solo.
    3. Fernando decide. La fila pasa a aprobado/denegado con quién y cuándo, y recién entonces se emite `permission_response`.
    4. El destino resuelve la espera y devuelve el resultado a `can_use_tool`.
 
