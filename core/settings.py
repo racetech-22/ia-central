@@ -33,6 +33,10 @@ CSRF_TRUSTED_ORIGINS = [
 # Nginx (fuera de Docker, ver ADR-003) hace de proxy TLS y reenvía este header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Campo cifrado de credenciales de proyecto de la sala (ADR-025 punto 8).
+# Sin default: apps/sala/fields.py falla al arrancar si falta o es inválida.
+CREDENTIALS_ENCRYPTION_KEY = os.environ.get("CREDENTIALS_ENCRYPTION_KEY")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -41,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.adminpanel",
+    "apps.sala",
 ]
 
 MIDDLEWARE = [
