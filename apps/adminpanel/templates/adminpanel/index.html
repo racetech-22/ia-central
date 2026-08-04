@@ -1,0 +1,17 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+{{ block.super }}
+<div class="module" id="ia-central-hoja-de-ruta-module">
+  <h2>Hoja de ruta</h2>
+  <div class="module">
+    <table>
+      <tbody>
+        <tr>
+          <th scope="row"><a href="{% url 'mapa' %}">Hoja de ruta</a></th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

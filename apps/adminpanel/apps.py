@@ -17,3 +17,9 @@ class AdminpanelConfig(AppConfig):
         admin.site.site_header = "IA CENTRAL"
         admin.site.site_title = "IA CENTRAL"
         admin.site.index_title = "Panel administrativo"
+        # Portada con un link a /mapa/ (ver apps/adminpanel/views.py) sin
+        # tocar el template real de contrib.admin: adminpanel/index.html
+        # extiende admin/index.html y se resuelve sin ambigüedad de orden
+        # de INSTALLED_APPS porque su ruta relativa no colisiona con la de
+        # ningún otro template instalado.
+        admin.site.index_template = "adminpanel/index.html"
