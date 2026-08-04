@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoja de ruta — IA CENTRAL</title>
+<style>
+  :root{
+    --surface:#ffffff; --page:#faf9f7; --border:#e0ddd8;
+    --text:#1a1a1a; --text-2:#6b6862;
+    --ok-bg:#e9f5ec; --ok-border:#7ab88b; --ok-text:#2c6b41;
+    --now-bg:#e6f0fa; --now-border:#7aa9d6; --now-text:#1f5182;
+  }
+  body{margin:0;padding:2rem 1rem 3rem;background:var(--page);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:22px;font-weight:500;margin:0 0 .25rem}
+  .meta{font-size:13px;color:var(--text-2);margin:0 0 1.5rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .t{font:500 14px system-ui,sans-serif;fill:var(--text)}
+  .ts{font:400 12px system-ui,sans-serif;fill:var(--text-2)}
+  .th{font:500 14px system-ui,sans-serif;fill:var(--text-2)}
+  .tg{font:500 14px system-ui,sans-serif;fill:var(--ok-text)}
+  .tsg{font:400 12px system-ui,sans-serif;fill:var(--ok-text)}
+  .ta{font:500 14px system-ui,sans-serif;fill:var(--now-text)}
+  .tsa{font:400 12px system-ui,sans-serif;fill:var(--now-text)}
+  .foot{font-size:13px;color:var(--text-2);margin-top:1.25rem;line-height:1.6}
+  .foot code{background:#f0eeea;padding:.1rem .3rem;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hoja de ruta — IA CENTRAL</h1>
+  <p class="meta">Fuente de verdad: ARQUITECTURA.md y docs/decisiones/ en el repo. Esta página es un resumen visual, no reemplaza a las ADR.</p>
+  <div class="card">
+<svg width="100%" viewBox="0 0 680 486" role="img">
+<title>Mapa de ruta de IA CENTRAL</title>
+<desc>Base construida y los cinco pilares en orden de prioridad, con su estado.</desc>
+<text x="40" y="30" class="th">Base construida</text>
+<rect x="40" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
+<text x="107" y="70" class="tg" text-anchor="middle">Infraestructura</text>
+<text x="107" y="90" class="tsg" text-anchor="middle">Docker y TLS</text>
+<rect x="195" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
+<text x="262" y="70" class="tg" text-anchor="middle">MCP server</text>
+<text x="262" y="90" class="tsg" text-anchor="middle">5 tools</text>
+<rect x="350" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
+<text x="417" y="70" class="tg" text-anchor="middle">Orquestador</text>
+<text x="417" y="90" class="tsg" text-anchor="middle">sin shell</text>
+<rect x="505" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
+<text x="572" y="70" class="tg" text-anchor="middle">Auditorias</text>
+<text x="572" y="90" class="tsg" text-anchor="middle">automaticas</text>
+<text x="40" y="140" class="th">Pilares, en orden de prioridad</text>
+<rect x="40" y="152" width="600" height="62" rx="8" fill="var(--now-bg)" stroke="var(--now-border)"/>
+<text x="60" y="178" class="ta">1 &#183; Sala de discusion y memoria basica</text>
+<text x="60" y="198" class="tsa">decidido: Daphne, protocolo saliente, esquema de datos. falta: el codigo</text>
+<rect x="40" y="224" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+<text x="60" y="246" class="t">2 &#183; Motor de permisos unificado</text>
+<text x="60" y="264" class="ts">cuando haga falta ir mas alla de los permisos de Claude Code</text>
+<rect x="40" y="286" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+<text x="60" y="308" class="t">3 &#183; Memoria profunda, RAG</text>
+<text x="60" y="326" class="ts">crece en paralelo desde el pilar 1, sin bloquear nada</text>
+<rect x="40" y="348" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+<text x="60" y="370" class="t">4 &#183; Panel administrativo</text>
+<text x="60" y="388" class="ts">fase 5, naciendo pantalla por pantalla segun haga falta</text>
+<rect x="40" y="410" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+<text x="60" y="432" class="t">5 &#183; Multi-modelo con debate</text>
+<text x="60" y="450" class="ts">fase 4, la pieza mas compleja, deliberadamente al final</text>
+<circle cx="46" cy="476" r="5" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
+<text x="58" y="480" class="ts">construido</text>
+<circle cx="146" cy="476" r="5" fill="var(--now-bg)" stroke="var(--now-border)"/>
+<text x="158" y="480" class="ts">disenado, sin codigo</text>
+<circle cx="296" cy="476" r="5" fill="var(--surface)" stroke="var(--border)"/>
+<text x="308" y="480" class="ts">pendiente</text>
+</svg>
+  </div>
+  <p class="foot">Para actualizar el mapa se edita este archivo y se commitea. Los estados se cambian intercambiando <code>fill</code>/<code>stroke</code> de cada caja y la clase del texto entre <code>t</code>/<code>ts</code>, <code>ta</code>/<code>tsa</code> y <code>tg</code>/<code>tsg</code>.</p>
+</div>
+</body>
+</html>
