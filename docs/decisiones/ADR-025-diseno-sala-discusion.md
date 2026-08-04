@@ -140,7 +140,7 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
    Un destino comprometido puede mentirle a IA CENTRAL sobre qué tool va a ejecutar, porque es el propio destino quien arma la `permission_request`. No hay mitigación real dentro de este protocolo: el modelo de confianza es que la máquina destino es de Fernando. Se documenta como límite conocido, con el mismo criterio con que ADR-006 documentó el suyo, en vez de dejarlo implícito.
 
-   Segundo riesgo, operativo: migrar `web` a ASGI es el cambio más grande sobre ese servicio desde su creación. Pendiente (Fase 3): verificar explícitamente después de la migración que el admin de Django y `https://aicentral.network/admin/login/` siguen respondiendo como antes, con el mismo criterio de verificación end-to-end de ADR-021/022/023.
+   Segundo riesgo, operativo: migrar `web` a ASGI es el cambio más grande sobre ese servicio desde su creación — eso no deja de ser cierto por haberse hecho. Verificado (2026-08-04, commit `3c72ee2`) que el admin de Django y `https://aicentral.network/admin/login/` siguieron respondiendo como antes tras la migración, con el mismo criterio de verificación end-to-end de ADR-021/022/023.
 
 ## Alternativas descartadas
 
