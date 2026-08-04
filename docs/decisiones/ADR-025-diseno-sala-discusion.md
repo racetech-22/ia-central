@@ -122,13 +122,9 @@ Nada de lo que sigue está construido todavía. Se marca explícitamente qué qu
 
    **9.7 Cambios de infraestructura que esto implica**
 
-   Pendiente (Fase 3):
+   Implementado (2026-08-04): `web` pasa de WSGI a ASGI, corriendo `daphne==4.2.3` (ver ADR-026) en vez de `runserver`; `channels==4.3.2` y `channels_redis==4.3.0`, ambos con pin exacto; servicio `redis` nuevo en `docker-compose.yml` (imagen `redis:8.10.0` pineada, sin `ports:`, solo red interna de Docker — mismo criterio que corrigió la exposición de `db`/`web`, enmienda 2026-08-02 a ADR-003); Nginx recargado con las cabeceras `Upgrade`/`Connection` (fuera de este repo — Nginx corre fuera de Docker, ver ADR-003); alta de `daphne`/`channels`/`channels_redis`/`redis` en `docs/DEPENDENCIAS.md` (ADR-019). Verificado end-to-end: `build`/`up` limpios, suite de `apps` en verde (6/6), `/admin/login/` y `/mapa/` respondiendo `200` (logueado), `redis` sin puerto expuesto al host (`ss -tlnp` no lo lista).
 
-   - `web` pasa de WSGI a ASGI, corriendo `daphne==4.2.3` (ver ADR-026) en vez de `runserver`.
-   - `channels` (`4.3.2` al momento de escribir esto) y `channels_redis`, ambos con pin exacto.
-   - Servicio `redis` nuevo en `docker-compose.yml`: imagen pineada, sin `ports:`, solo red interna de Docker — mismo criterio que corrigió la exposición de `db`/`web` (enmienda 2026-08-02 a ADR-003).
-   - Nginx: cabeceras `Upgrade`/`Connection` y `proxy_read_timeout` mayor al intervalo de heartbeat.
-   - Alta de `channels`, `channels_redis`, el servidor ASGI y `redis` en `docs/DEPENDENCIAS.md` (ADR-019).
+   Pendiente (Fase 3): las rutas de websocket. `core/asgi.py` solo tiene la rama `"http"` del `ProtocolTypeRouter` por ahora — sin `URLRouter` ni consumers para `"websocket"` todavía. Es la subtarea siguiente del pilar 1.
 
    Propiedad que se preserva a propósito: en Redis no vive nada durable, solo ruteo de conexiones vivas. Perderlo entero corta conexiones en curso pero no pierde datos, y no agrega nada al alcance del backup de ADR-004 — el contrato de portabilidad de ADR-002 queda intacto.
 

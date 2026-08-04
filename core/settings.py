@@ -38,6 +38,11 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CREDENTIALS_ENCRYPTION_KEY = os.environ.get("CREDENTIALS_ENCRYPTION_KEY")
 
 INSTALLED_APPS = [
+    # daphne va primero, antes de django.contrib.staticfiles: si no, su
+    # comando `runserver` con soporte ASGI no toma precedencia sobre el de
+    # staticfiles (ver ADR-026).
+    "daphne",
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -78,6 +83,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
+
+# Servicio `redis` de docker-compose.yml — solo red interna, sin ports:
+# (ADR-025 §9.7, ADR-026). Sin websocket routes todavía (subtarea siguiente).
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
 
 DATABASES = {
     "default": {

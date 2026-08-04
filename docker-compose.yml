@@ -9,13 +9,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    # Channel layer de Channels (ADR-025 §9.7, ADR-026) — solo ruteo de
+    # conexiones vivas entre consumers, nada durable acá (ver ADR-025 §9.7:
+    # perderlo entero corta conexiones en curso pero no pierde datos, fuera
+    # del alcance del backup de ADR-004). Sin ports: — solo red interna,
+    # mismo criterio que corrigió la exposición de db/web (enmienda
+    # 2026-08-02 a ADR-003).
+    image: redis:8.10.0
+    restart: unless-stopped
+
   web:
     build: .
     restart: unless-stopped
+    # daphne en vez de runserver (ADR-025 §9.7, ADR-026) — ProtocolTypeRouter
+    # de core/asgi.py, sin rutas de websocket todavía. Escucha 0.0.0.0:8000
+    # dentro del contenedor; el mapeo al host sigue siendo solo 127.0.0.1.
+    command: ["daphne", "-b", "0.0.0.0", "-p", "8000", "core.asgi:application"]
     env_file:
       - .env
     depends_on:
       - db
+      - redis
     volumes:
       - .:/app
     ports:
