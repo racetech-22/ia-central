@@ -70,3 +70,26 @@ Organizado por pilar, con los símbolos exportados relevantes (nombres exactos, 
 - **Bonus, relacionado con el gap de ADR-006**: el SDK tiene soporte de sandbox (`SandboxSettings`, `SandboxNetworkConfig`, `SandboxIgnoreViolations`) — condicionado a que el VPS tenga `bwrap` instalado (confirmado en ADR-006 que hoy no lo tiene). Anotar como candidato a revisar si algún día se instala `bwrap`.
 
 Ninguno de estos hallazgos es una decisión tomada — son recursos identificados para cuando se diseñe cada pilar en detalle, con su propia ADR, como ya estableció esta ADR más arriba.
+
+## Enmienda 2026-08-06: nomenclatura de los tres roles, y el Consultor como pieza separada y barata
+
+**Nomenclatura fijada.** Los tres roles del punto 4 pasan a llamarse **Consultor**, **Director** y **Ejecutor**. Equivalencias con el texto original de ese punto: "rol planificador (conversacional, similar al uso actual de Cowork)" = Consultor; "Fernando como decisor final" = Director; "rol ejecutor" = Ejecutor.
+
+El motivo no es cosmético. "Planificador" describe mal la función y arriesga que se implemente como generador de planes. La función real observada es verificar hechos contra fuentes antes de afirmarlos, deliberar y contradecir, y dejar registrado el razonamiento — en la sesión del 2026-08-06 ese rol corrigió cuatro veces la dirección en curso, tres de ellas corrigiéndose a sí mismo (ver la enmienda de la misma fecha en ADR-027, sección "Correcciones de razonamiento previo"). "Decisor final" se queda corto en la dirección opuesta: el Director no aprueba al final, fija el rumbo y el criterio de valor en cada iteración, y en ACP (ADR-027) es estructuralmente quien responde `session/request_permission`.
+
+**El Consultor no necesita la maquinaria del Ejecutor.** No edita archivos ni ejecuta comandos: solo produce texto. No necesita ACP, ni catálogo, ni `session/request_permission`, ni la exclusión de secretos de ADR-027, porque no puede romper nada. Necesita un modelo vía el gateway de ADR-012, lectura del repo y de la web, y la memoria básica del pilar 1. En términos de ADR-012 es esencialmente `orchestrator.run(...)` con un prompt de sistema y unas pocas tools de lectura.
+
+Consecuencia sobre el orden de trabajo: de las dos piezas de la sala, el Consultor es la barata y el Ejecutor es la cara. Toda la complejidad de ADR-027 pertenece al Ejecutor.
+
+**Corrección a la enmienda del 2026-08-03 de esta misma ADR.** Esa enmienda anotó como candidato modelar planificador y ejecutor como dos sub-agentes dentro de una misma sesión del Claude Agent SDK (ver "Pilar 4" más arriba). Con ADR-027 ese camino deja de convenir: volvería a acoplar el Ejecutor al SDK de un proveedor justo cuando se decidió que pueda ser cualquier agente ACP. Consultor y Ejecutor deben ser piezas separadas. El resto del catálogo de recursos del SDK de esa enmienda no se ve afectado.
+
+**Debate multi-modelo en el Consultor, adelanto parcial y barato del pilar 5.** El pilar 5 está al final por complejidad, y esa evaluación aplica al Ejecutor, donde el debate es caro y riesgoso. En el Consultor es incomparablemente más barato: llamadas a LiteLLM y un bucle de turnos, sin ACP, sin permisos y sin catálogo. Se registra como deseable y viable antes del pilar 5 completo, sin cambiar el orden de prioridad ya fijado: va después de que la sala mínima con un solo modelo esté funcionando.
+
+Dos criterios de diseño que quedan registrados desde ahora:
+
+- **Primera ronda a ciegas y en paralelo**: cada modelo responde sin ver a los demás, y solo en una segunda ronda se le muestran las respuestas ajenas para que critique. Motivo: el modo de fallo conocido del debate multi-modelo es la convergencia por complacencia — mostrarle a B lo que dijo A hace que B tienda a acordar, y se paga varias veces por una sola opinión con apariencia de contraste. El disenso hay que forzarlo estructuralmente.
+- **No hay modelo árbitro.** La síntesis se presenta al Director con los desacuerdos explícitos y sin resolver. El valor del debate es ver dónde no acuerdan; una síntesis automática oculta justo la información por la que se pagó.
+
+Tensión ya conocida, no problema nuevo: la enmienda de ADR-012 dejó registrado que el gateway no está en el camino de las llamadas a Claude mientras se use autenticación por suscripción (ADR-016). Cualquier debate que incluya a Claude debe resolver eso: por suscripción es barato pero esquiva LiteLLM; por LiteLLM entra al debate pero se paga por token.
+
+**Continuidad del Consultor entre sesiones.** El Consultor no es un estado serializable que se transfiera: cada sesión se reconstituye leyendo instrucciones, repo e historial. La sesión de Cowork del 2026-08-06 es evidencia directa — se compactó a mitad de camino, perdió el contexto previo, y se reconstituyó leyendo ADR-027, ADR-012 y esta ADR en vivo desde GitHub. Lo que hace posible esa reconstitución es que las ADR registren el razonamiento y las alternativas descartadas, no solo las decisiones: tratarlo como requisito y no como estilo. Lo que no se transfiere es el juicio, que depende del modelo — un Consultor sobre un modelo más chico va a tener el mismo conocimiento y peor criterio, y esa es una decisión de presupuesto a tomar conscientemente.
