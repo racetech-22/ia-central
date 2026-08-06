@@ -30,3 +30,7 @@ La limpieza de retención (`find ... -delete`) está deliberadamente excluida de
 - Los dumps viven en `/home/fernando/backups/postgres/`, fuera del repositorio y sin sincronizar a ningún otro lugar. Si el VPS se pierde por completo, este backup se pierde con él — sigue dependiendo del Auto Backup de Contabo (o de un destino remoto futuro) como única protección contra ese escenario.
 - Si se migra el proyecto a otro servidor (ADR-002), hay que recrear el cronjob (`crontab -l` de este ADR) y copiar `scripts/backup_postgres.sh`, que sí está versionado.
 - Restaurar un dump: `gunzip -c ia_central_<timestamp>.sql.gz | docker compose exec -T db psql -U ia_central ia_central`.
+
+## Enmienda 2026-08-06: consecuencia superada — ver ADR-005
+
+La primera consecuencia de arriba ("sin sincronizar a ningún otro lugar... este backup se pierde con él") quedó superada el mismo día en que se escribió: ADR-005 (2026-07-30) agrega sync a Google Drive vía `rclone` al mismo `scripts/backup_postgres.sh` — ya reflejado en la sección Decisión de esta ADR (`RCLONE_STATUS=OK|FAILED|SKIPPED`), pero nunca actualizado acá. Hoy los dumps sí se sincronizan fuera del VPS; el resto de la consecuencia (mantener el Auto Backup de Contabo como protección adicional, no la única) sigue vigente sin cambios. Hallazgo de la auditoría automática de ADR-014 del 2026-08-06.
