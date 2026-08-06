@@ -19,26 +19,37 @@ Este README es un punto de entrada. La descripción completa de la arquitectura 
 
     ia-central/
     ├── README.md
+    ├── CLAUDE.md                (guía para Claude Code en este repo)
     ├── ARQUITECTURA.md          (documento maestro de arquitectura, fuente de verdad)
     ├── CHANGELOG.md             (historial de cambios relevantes del proyecto)
     ├── docs/
-    │   └── decisiones/          (ADRs, una por decisión importante)
+    │   ├── DEPENDENCIAS.md      (inventario de herramientas y servicios externos)
+    │   └── decisiones/          (ADRs, una por decisión importante, más INDEX.md)
+    ├── .claude/                 (permisos y hooks de Claude Code)
+    ├── .githooks/               (hooks de Git versionados)
+    ├── .github/                 (workflows de GitHub Actions, ver ADR-010)
+    ├── scripts/                 (backup, auditorías programadas por cron)
     ├── docker-compose.yml
+    ├── Dockerfile
+    ├── litellm/                 (config del servicio litellm, ver ADR-012)
+    ├── ntfy/                    (config del servicio ntfy, ver ADR-018)
     ├── env.example
     ├── .gitignore
     ├── requirements.txt
     ├── manage.py
-    ├── core/                    (proyecto Django: settings, urls raíz)
+    ├── admin_tasks_server.py    (sidecar admin-tasks, ver ADR-023)
+    ├── core/                    (proyecto Django: settings, urls raíz, asgi)
     ├── apps/                    (apps Django del propio IA CENTRAL)
-    └── mcp_servers/             (conectores MCP propios: Django, servidores, local)
+    ├── orchestrator/            (interfaz interna del agente, ver ADR-012/ADR-021)
+    └── mcp_servers/             (conectores MCP propios)
 
 ## Cómo mantener el contexto entre conversaciones
 
-Este repositorio es la fuente de verdad versionada. Además, cada vez que ARQUITECTURA.md o las ADRs se actualicen, la versión vigente debe subirse también a los archivos del proyecto "IA CENTRAL" en Claude, para que cualquier conversación futura arranque con el contexto completo sin necesidad de reexplicarlo.
+Este repositorio es la fuente de verdad versionada, y se consulta **en vivo** desde `https://raw.githubusercontent.com/racetech-22/ia-central/master/` — no vía copias subidas a los archivos del proyecto en Claude ni a Google Drive, que se desactualizan en cada commit. Ver ADR-011, incluidas sus enmiendas sobre caché del CDN y sobre `docs/decisiones/INDEX.md` (los nombres de archivo de las ADR llevan slug descriptivo y no son deducibles).
 
 ## Estado actual
 
-Skeleton de Django creado y funcionando sobre Docker (Fase 2 en marcha). Ver CHANGELOG.md para el detalle de avances.
+Fase 2 completa (VPS, Docker, Django sobre Postgres, HTTPS en `aicentral.network` con Nginx + Certbot) y Fase 3 en curso: MCP server propio con tools nombradas, servicio `orchestrator` cableado, y `web` migrado a ASGI. El estado vigente y detallado vive en ARQUITECTURA.md §5 y en CHANGELOG.md — este README no lo duplica, porque una lista de avances acá se desactualiza sola.
 
 ## Cómo correrlo en local
 
