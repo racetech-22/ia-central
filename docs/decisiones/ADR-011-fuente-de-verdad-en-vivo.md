@@ -62,3 +62,15 @@ Lo que sí se verificó confiable en la misma sesión: `api.github.com/repos/rac
 Esto también resuelve, de paso, la lectura de `docs/decisiones/INDEX.md` y de cualquier ADR puntual: se piden con el mismo SHA obtenido en el paso 1, no con `?v=` sobre la URL de `master`.
 
 La limitación de la enmienda anterior sobre `api.github.com/repos/.../contents/...` (devuelve vacío desde el fetch de Cowork) sigue vigente y no se ve afectada: el endpoint nuevo que se usa acá es `/commits/<ref>`, no `/contents/...` — son rutas distintas de la misma API, verificar cada una por separado antes de asumir que comparten el mismo problema.
+
+## Enmienda 2026-08-06: el protocolo de dos pasos no es ejecutable desde Cowork
+
+Verificado en la sesión de Cowork del 2026-08-06, en ambos sentidos y en la misma sesión: `https://api.github.com/repos/racetech-22/ia-central/commits/master` responde correctamente desde Claude Code en el VPS (se usó para verificar de forma independiente que el HEAD remoto coincidiera con un commit recién pusheado), pero devuelve respuesta vacía desde la herramienta de fetch web de Cowork — mismo comportamiento que esta ADR ya había registrado para `api.github.com/repos/.../contents/...`. El problema es de la herramienta de fetch de Cowork contra ese host, no de la API de GitHub.
+
+Consecuencia: el paso 1 del protocolo de dos pasos (obtener el SHA) no está disponible en Cowork, y por lo tanto tampoco el paso 2 (pedir cada archivo anclado a ese SHA). Una sesión de Cowork queda obligada a pedir sobre el nombre de rama, que es exactamente lo que la enmienda 2026-08-03 de esta ADR identificó como inseguro. En esa misma sesión se materializó el riesgo: el primer fetch de `ARQUITECTURA.md`, `ADR-024` y `ADR-027` devolvió versiones sin las enmiendas del 2026-08-06, ya pusheadas, sin ningún indicio de error — la sesión razonó varios minutos sobre contenido viejo antes de detectarlo por una inconsistencia de fechas.
+
+Mitigación disponible, explícitamente imperfecta: releer cada archivo una segunda vez con un query string distinto y comparar. Si la segunda lectura trae contenido que la primera no tenía, la primera estaba cacheada. No es garantía — el CDN puede ignorar el query string para su cache key, que es la razón por la que esta misma ADR abandonó el `?v=` — pero fue lo único que funcionó ese día. Se documenta como límite operativo conocido de Cowork, no como solución.
+
+Regla que se deriva: en Cowork, antes de razonar sobre una ADR con estado "En progreso" o con enmiendas recientes, releerla una segunda vez y confirmar que trae lo mismo. Registrada también en CLAUDE.md.
+
+Sin resolver: si existe alguna vía de fetch desde Cowork que permita anclar a SHA. No se investigó más allá de confirmar que `api.github.com` no responde desde ahí.
