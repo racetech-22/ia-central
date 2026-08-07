@@ -33,3 +33,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-025 | ADR-025-diseno-sala-discusion.md |
 | ADR-026 | ADR-026-servidor-asgi-daphne.md |
 | ADR-027 | ADR-027-interfaz-ejecutor-acp.md |
+| ADR-028 | ADR-028-aislamiento-proceso-ejecutor.md |

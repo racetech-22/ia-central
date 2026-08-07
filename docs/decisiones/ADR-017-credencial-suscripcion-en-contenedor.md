@@ -48,3 +48,9 @@ Comparativamente: Claude Code ya corre en este mismo VPS con shell completo y es
 
 - El montaje `:ro` y el UID parametrizado (`ORCHESTRATOR_UID`, sin cablear a un número fijo) ya están implementados en el servicio real `orchestrator` de `docker-compose.yml` — ver ADR-021.
 - La verificación de que ninguna tool de lectura acepta rutas arbitrarias ya se hizo, con constancia explícita, al diseñar `mcp_servers/django_project` (ver ADR-020): `security.py` es la autoridad única de esta condición, probada con 5 casos adversariales en `tests/test_security.py`. La condición del punto 2 de esta ADR deja de estar vacía — hoy hay una tool MCP real corriendo, acotada por esa verificación.
+
+## Enmienda 2026-08-07: el Ejecutor es exactamente el caso que la condición del punto 2 anticipaba
+
+El Ejecutor (ADR-027, ACP) tiene shell y lectura arbitraria por diseño — es un CLI de agente de código completo, no una tool MCP acotada. Montarle el credencial de suscripción rompería la condición del punto 2 por construcción: no hay forma de que un shell arbitrario cumpla "ninguna tool permite lectura de rutas arbitrarias del filesystem". Se resuelve exactamente como esta misma ADR ya indica en su punto 3 y en "Alternativas descartadas": clave de API dedicada, no la suscripción — ver ADR-028 punto 7 (Workspace de Anthropic con tope de gasto, ADR-025 punto 6).
+
+Esta decisión sigue vigente sin cambios para `orchestrator`, que no tiene shell y cuya condición del punto 2 sigue satisfecha por `security.py` (ADR-020). No se invalida esta ADR — se confirma que su propia cláusula de invalidación (punto 3) es la que corresponde aplicar al Ejecutor, un actor distinto de `orchestrator` que esta ADR nunca contempló.
