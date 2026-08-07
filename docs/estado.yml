@@ -160,7 +160,7 @@ piezas:
     estado: disenado
     pilar: 1
     fase: 3
-    adrs: [ADR-025, ADR-027, ADR-028]
+    adrs: [ADR-025, ADR-027, ADR-028, ADR-030]
 
   - id: pilar1_protocolo_conexion_saliente
     nombre: "Protocolo de conexión saliente"
@@ -282,11 +282,6 @@ decisiones_abiertas:
 
   - id: escritura_fuera_arbol_trabajo_ejecutor
     texto: "Escritura legítima del Ejecutor fuera de su propio árbol de trabajo: declarado fuera de alcance de ADR-028, sin resolver."
-    adr: ADR-028
-    depende_de: "diseño técnico"
-
-  - id: granularidad_contenedor_ejecutor
-    texto: "Granularidad del contenedor del Ejecutor (uno por proyecto o uno por chat) y quién gestiona su ciclo de vida."
     adr: ADR-028
     depende_de: "diseño técnico"
 
