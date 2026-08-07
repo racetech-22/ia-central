@@ -160,7 +160,7 @@ piezas:
     estado: disenado
     pilar: 1
     fase: 3
-    adrs: [ADR-025, ADR-027, ADR-028, ADR-030]
+    adrs: [ADR-025, ADR-027, ADR-028, ADR-030, ADR-031]
 
   - id: pilar1_protocolo_conexion_saliente
     nombre: "Protocolo de conexión saliente"
@@ -282,11 +282,6 @@ decisiones_abiertas:
 
   - id: escritura_fuera_arbol_trabajo_ejecutor
     texto: "Escritura legítima del Ejecutor fuera de su propio árbol de trabajo: declarado fuera de alcance de ADR-028, sin resolver."
-    adr: ADR-028
-    depende_de: "diseño técnico"
-
-  - id: ubicacion_cliente_acp
-    texto: "Dónde corre el proceso cliente ACP del lado de IA CENTRAL: dentro de web/Daphne o como servicio propio."
     adr: ADR-028
     depende_de: "diseño técnico"
 

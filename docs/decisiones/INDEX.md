@@ -36,3 +36,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-028 | ADR-028-aislamiento-proceso-ejecutor.md |
 | ADR-029 | ADR-029-mapa-de-ruta-desde-estado-versionado.md |
 | ADR-030 | ADR-030-granularidad-ciclo-vida-ejecutor.md |
+| ADR-031 | ADR-031-ubicacion-cliente-acp.md |
