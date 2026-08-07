@@ -74,3 +74,9 @@ Mitigación disponible, explícitamente imperfecta: releer cada archivo una segu
 Regla que se deriva: en Cowork, antes de razonar sobre una ADR con estado "En progreso" o con enmiendas recientes, releerla una segunda vez y confirmar que trae lo mismo. Registrada también en CLAUDE.md.
 
 Sin resolver: si existe alguna vía de fetch desde Cowork que permita anclar a SHA. No se investigó más allá de confirmar que `api.github.com` no responde desde ahí.
+
+## Enmienda 2026-08-07: con Claude Code en paralelo, Cowork sí puede anclar a SHA — reemplaza la mitigación de doble lectura para ese caso
+
+La enmienda 2026-08-06 es correcta para una sesión de Cowork **aislada**, pero incompleta como conclusión general. Verificado el 2026-08-07: cuando Cowork trabaja en paralelo con una sesión de Claude Code, esta última sí alcanza `api.github.com` (ya lo usaba para verificar el HEAD remoto de forma independiente, ver enmienda 2026-08-06) — basta con que le pase a Cowork el SHA completo del commit para que Cowork ancle todas sus lecturas a `https://raw.githubusercontent.com/racetech-22/ia-central/<SHA>/<ruta>`, sin necesitar pedir `api.github.com` por su cuenta. El contenido de un SHA fijo es inmutable: en este modo no hace falta releer con un query string distinto, porque no hay nada que ese archivo pueda haber cambiado contra qué comparar. Usado así cuatro veces el 2026-08-07, sin discrepancias.
+
+**Esto reemplaza la mitigación de doble lectura de la enmienda 2026-08-06 para este caso — no se suma a ella.** La doble lectura queda como mitigación exclusiva del caso sin Claude Code disponible en la sesión (Cowork aislado, o cualquier sesión fetch-only sin un par que alcance `api.github.com`), donde sigue siendo la única vía, imperfecta, ya documentada en esa enmienda.
