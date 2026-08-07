@@ -4,8 +4,52 @@ set -euo pipefail
 INDEX_FILE="docs/decisiones/INDEX.md"
 staged_files="$(git diff --cached --name-only)"
 
+# Corre un management command de Django dentro del contenedor "web",
+# prefiriendo "exec" sobre el contenedor ya corriendo (evita pagar el
+# arranque de un contenedor nuevo en cada commit) y cayendo a "run --rm"
+# como respaldo si no está levantado (por ejemplo en un clon recién armado,
+# antes del primer "docker compose up"). Distingue "Docker no está
+# disponible" de "la validación falló" — antes ambos casos terminaban en el
+# mismo mensaje, y un commit bloqueado porque el demonio de Docker no
+# responde no es lo mismo que uno bloqueado porque el archivo tiene un
+# error real.
+#
+# Argumentos: $1 = nombre del management command (ej. "validar_estado")
+#             $2 = mensaje a mostrar si la validación falla (no si Docker
+#                  no está disponible: ese caso usa un mensaje genérico,
+#                  porque esta función es compartida entre validaciones
+#                  distintas y no sabe de antemano qué archivo estaba
+#                  validando cada una)
+# Devuelve: 0 si el comando corrió y salió con éxito; 1 en cualquier otro
+# caso (ya habiendo impreso a stderr el mensaje correspondiente).
+ejecutar_validacion_django() {
+  local comando="$1"
+  local mensaje_error="$2"
+
+  local validador
+  if docker compose ps --status running --services 2>/dev/null | grep -qx web; then
+    validador=(docker compose exec -T web python manage.py "$comando")
+  else
+    validador=(docker compose run --rm -T web python manage.py "$comando")
+  fi
+
+  local salida
+  if ! salida="$("${validador[@]}" 2>&1)"; then
+    if ! docker info >/dev/null 2>&1; then
+      echo "pre-commit: Docker no está disponible (¿demonio corriendo? ¿docker compose instalado?) — no se pudo validar. Commit bloqueado." >&2
+    else
+      echo "pre-commit: $mensaje_error" >&2
+      echo "$salida" >&2
+    fi
+    return 1
+  fi
+
+  return 0
+}
+
 # --- Validación 1: docs/decisiones/INDEX.md contra los archivos ADR reales.
 # Disparador propio: solo corre si el commit toca algo bajo docs/decisiones/.
+# Bash puro, no necesita Docker.
 if echo "$staged_files" | grep -q '^docs/decisiones/'; then
   if [ ! -f "$INDEX_FILE" ]; then
     echo "pre-commit: falta $INDEX_FILE" >&2
@@ -41,27 +85,19 @@ fi
 # una sola fuente de verdad. No corre el comando "prueba" de cada pieza —
 # eso es declarativo, ver ADR-029.
 if echo "$staged_files" | grep -q '^docs/estado.yml$'; then
-  # Preferir "exec" sobre el contenedor "web" ya corriendo, para no pagar el
-  # arranque de un contenedor nuevo en cada commit; "run --rm" queda como
-  # respaldo si "web" no está levantado (por ejemplo en un clon recién
-  # armado, antes del primer "docker compose up").
-  if docker compose ps --status running --services 2>/dev/null | grep -qx web; then
-    validador=(docker compose exec -T web python manage.py validar_estado)
-  else
-    validador=(docker compose run --rm -T web python manage.py validar_estado)
+  if ! ejecutar_validacion_django validar_estado "docs/estado.yml no pasa la validación. Commit bloqueado."; then
+    exit 1
   fi
+fi
 
-  if ! salida="$("${validador[@]}" 2>&1)"; then
-    # Distinguir "Docker no está disponible" de "docs/estado.yml es
-    # inválido" — antes ambos casos terminaban en el mismo mensaje, y un
-    # commit bloqueado porque el demonio de Docker no responde no es lo
-    # mismo que uno bloqueado porque el archivo tiene un error real.
-    if ! docker info >/dev/null 2>&1; then
-      echo "pre-commit: Docker no está disponible (¿demonio corriendo? ¿docker compose instalado?) — no se pudo validar docs/estado.yml. Commit bloqueado." >&2
-    else
-      echo "pre-commit: docs/estado.yml no pasa la validación. Commit bloqueado." >&2
-      echo "$salida" >&2
-    fi
+# --- Validación 3: ARQUITECTURA.md §6 contra los archivos ADR reales
+# (ADR-032). Dos disparadores, no uno, a propósito: §6 se puede romper
+# editando ARQUITECTURA.md sin tocar ninguna ADR (borrar o desordenar un
+# renglón existente), y también agregando o borrando un archivo ADR sin
+# actualizar §6 — así que dispara si el commit toca algo bajo
+# docs/decisiones/ O el archivo ARQUITECTURA.md, no solo uno de los dos.
+if echo "$staged_files" | grep -qE '^(docs/decisiones/|ARQUITECTURA\.md$)'; then
+  if ! ejecutar_validacion_django validar_arquitectura "ARQUITECTURA.md §6 no pasa la validación. Commit bloqueado."; then
     exit 1
   fi
 fi

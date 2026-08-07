@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.adminpanel.arquitectura import RUTA_ARQUITECTURA, validar_arquitectura
 from apps.adminpanel.estado import cargar_estado, validar_estado
 
 User = get_user_model()
@@ -159,6 +160,74 @@ class EstadoValidacionTests(TestCase):
             self.assertEqual(datos["piezas"][0]["id"], "x")
         finally:
             Path(ruta).unlink()
+
+
+class ArquitecturaValidacionTests(TestCase):
+    """apps/adminpanel/arquitectura.py es la misma validación que corre
+    .githooks/pre-commit (vía manage.py validar_arquitectura) — probada acá
+    directamente, sin pasar por el hook. Ver ADR-032."""
+
+    def test_arquitectura_real_es_valida(self):
+        """Cubre el caso real: ARQUITECTURA.md §6 debe listar exactamente
+        los archivos ADR-*.md que existen hoy en docs/decisiones/, en los
+        dos sentidos. Corre siempre, no solo cuando ARQUITECTURA.md o una
+        ADR cambian — mismo criterio que EstadoValidacionTests para el
+        caso inverso."""
+        contenido = RUTA_ARQUITECTURA.read_text(encoding="utf-8")
+        errores = validar_arquitectura(contenido)
+        self.assertEqual(errores, [], f"ARQUITECTURA.md §6 no es válida: {errores}")
+
+    def test_detecta_adr_real_faltante_en_seccion_6(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "ADR-001-primera.md").write_text("x")
+            (raiz / "ADR-002-segunda.md").write_text("x")
+            contenido = "## 6. Registro de decisiones\n\n- ADR-001: primera.\n"
+
+            errores = validar_arquitectura(contenido, raiz_adrs=raiz)
+
+            self.assertTrue(any("ADR-002" in e for e in errores))
+
+    def test_detecta_renglon_huerfano_en_seccion_6(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "ADR-001-primera.md").write_text("x")
+            contenido = "## 6. Registro de decisiones\n\n- ADR-001: primera.\n- ADR-999: no existe.\n"
+
+            errores = validar_arquitectura(contenido, raiz_adrs=raiz)
+
+            self.assertTrue(any("ADR-999" in e for e in errores))
+
+    def test_seccion_completa_pasa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "ADR-001-primera.md").write_text("x")
+            contenido = "## 6. Registro de decisiones\n\n- ADR-001: primera.\n## 7. Otra sección\ntexto.\n"
+
+            errores = validar_arquitectura(contenido, raiz_adrs=raiz)
+
+            self.assertEqual(errores, [])
+
+    def test_no_cuenta_renglones_fuera_de_la_seccion_6(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "ADR-001-primera.md").write_text("x")
+            contenido = (
+                "## 6. Registro de decisiones\n\n"
+                "- ADR-001: primera.\n"
+                "## 7. Otra cosa\n\n"
+                "- ADR-999: esto no cuenta, está fuera de §6.\n"
+            )
+
+            errores = validar_arquitectura(contenido, raiz_adrs=raiz)
+
+            self.assertEqual(errores, [])
+
+    def test_falta_encabezado_seccion_6(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            errores = validar_arquitectura("sin encabezado acá", raiz_adrs=Path(tmp))
+
+        self.assertTrue(any("Registro de decisiones" in e for e in errores))
 
 
 class HooksPathActivadoTests(TestCase):

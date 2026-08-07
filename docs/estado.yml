@@ -44,8 +44,8 @@ piezas:
     estado: construido
     pilar: base
     fase: 2
-    adrs: [ADR-008, ADR-014, ADR-018]
-    artefactos: [scripts/memory_audit.sh, scripts/adr_audit.sh]
+    adrs: [ADR-008, ADR-014, ADR-018, ADR-032]
+    artefactos: [scripts/memory_audit.sh, scripts/adr_audit.sh, apps/adminpanel/management/commands/validar_arquitectura.py]
     prueba: "bash scripts/adr_audit.sh"
     construido_el: 2026-08-02
 
