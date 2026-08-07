@@ -23,6 +23,13 @@ La enmienda 2026-08-06 a ADR-025 registró, sin decidirlo, un candidato de mitig
 
 7. **Credencial: clave de API de Workspace con tope de gasto (ADR-025 punto 6), nunca la suscripción.**
 
+## Alcance
+
+Esta ADR decide el aislamiento de proceso del Ejecutor **nativo únicamente**. Dos límites que la enmienda 2026-08-06 a ADR-025 dejó abiertos siguen sin resolver acá, y esta ADR no los cierra por omisión sino a propósito:
+
+- **Destinos externos**: para un proyecto externo (por ejemplo TacoraGo) no hay Docker Compose propio de IA CENTRAL corriendo en esa máquina — el aislamiento de proceso depende de cómo se instale el agente ahí. Queda dentro del alcance de la pantalla "conectar proyecto nuevo" (ADR-025 punto 5), sin resolver.
+- **Escritura legítima fuera del árbol de trabajo**: si el Ejecutor necesita escribir fuera de su propio árbol de trabajo por una razón legítima, esta ADR no lo contempla — declarado explícitamente fuera de alcance, no una omisión sin marcar.
+
 ## Alternativas descartadas
 
 - **Usuario restringido del host en vez de contenedor propio**: descartado por el motivo del punto 1 — no viaja con la portabilidad de ADR-002, no tiene el precedente de `admin-tasks`/`orchestrator`, y depende de una lista de restricciones del lado del proceso host en vez de namespaces del kernel.
@@ -33,4 +40,7 @@ La enmienda 2026-08-06 a ADR-025 registró, sin decidirlo, un candidato de mitig
 - El Ejecutor pierde `git push`: pasa a ser una tool angosta del lado de IA CENTRAL, coherente con ADR-015 (la lista de tools ES la política de seguridad).
 - El Ejecutor pierde acceso web, lo que choca con la disciplina de verificar versiones en vivo de ADR-020/ADR-026 — mitigado porque esa verificación es trabajo del Consultor (ADR-024, enmienda 2026-08-06), no del Ejecutor.
 - Candidato registrado si el punto anterior molesta en la práctica: proxy de salida con allowlist, nunca abrir la red del Ejecutor sin acotar.
+- **Riesgo operativo de la segmentación de redes — el cambio de mayor riesgo de esta ADR.** Hoy `web`, `db`, `redis`, `litellm`, `docker-proxy` y `admin-tasks` conviven en la red por defecto que crea Compose, sin redes declaradas explícitamente. Introducir redes `internal: true` para el Ejecutor obliga a declarar redes explícitas para todo el stack y verificar, uno por uno, que cada servicio sigue viendo lo que necesita: `web`↔`db`, `web`↔`redis` (channel layer de ADR-026), `orchestrator`↔`litellm`, `orchestrator`↔`docker-proxy`, `admin-tasks`↔`db`. No es un cambio aislado al Ejecutor, toca la topología de red de todo el stack — exige verificación end-to-end antes de mergear, mismo criterio que ADR-021/ADR-022/ADR-023 aplicaron a cada tool nueva antes de darla por buena.
+- **Pendiente concreto, no diseñado: granularidad del contenedor del Ejecutor** — uno por proyecto o uno por chat, y quién gestiona su ciclo de vida (crearlo/destruirlo): la propia sala, un supervisor aparte, o algo estático en `docker-compose.yml`.
+- **Pendiente concreto, no diseñado: dónde corre el proceso cliente ACP del lado de IA CENTRAL** — dentro del proceso `web`/Daphne (el mismo que sirve la sala) o como servicio propio de `docker-compose.yml`, separado de `web`.
 - **Pendiente (Fase 3)** en su totalidad, convención de ADR-014: no hay una sola línea de esto implementada — ni el servicio en `docker-compose.yml`, ni el puente stdio↔socket, ni el clon propio, ni el endurecimiento, ni las redes `internal: true`.
