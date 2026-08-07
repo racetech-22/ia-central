@@ -294,3 +294,20 @@ decisiones_abiertas:
     texto: "Dónde corre el proceso cliente ACP del lado de IA CENTRAL: dentro de web/Daphne o como servicio propio."
     adr: ADR-028
     depende_de: "diseño técnico"
+
+  - id: chequeo_http_sitio_desplegado
+    texto: >-
+      Falta un chequeo que golpee el sitio desplegado por HTTP real desde
+      afuera (/admin/login/ y /mapa/, esperando 200), enganchado al cron
+      existente y avisando por el ntfy ya cableado en ADR-018 si no responde
+      como se espera. A diferencia de la suite (que corre en un contenedor
+      nuevo creado desde la imagen recién construida) y del hook de
+      pre-commit (que valida esquema, no despliegue), este chequeo mide el
+      resultado real y es agnóstico a la causa. Hallazgo del 2026-08-07: la
+      suite dio 18/18 en verde y /mapa/ dio 200 en un contenedor de prueba,
+      mientras el sitio real devolvía ModuleNotFoundError porque el
+      contenedor web de larga vida no se había recreado tras agregar
+      PyYAML — nada lo habría detectado sin la verificación manual de ese
+      día. No implementado: sin script, sin cron nuevo.
+    adr: ADR-018
+    depende_de: "decisión del Director; ameritará su propia ADR al diseñarse"
