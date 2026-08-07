@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Chat, EntradaSesion, Proyecto, SolicitudPermiso
+from .models import Chat, EntradaSesion, Proyecto, SesionEjecutor, SolicitudPermiso
 
 
 @admin.register(Proyecto)
@@ -28,9 +28,16 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
 
 @admin.register(Chat)
 class ChatAdmin(ReadOnlyModelAdmin):
-    list_display = ("titulo", "session_id", "proyecto", "creado_en")
+    list_display = ("titulo", "consultor_session_id", "proyecto", "agente", "modelo", "creado_en")
     list_filter = ("proyecto",)
-    search_fields = ("titulo", "session_id")
+    search_fields = ("titulo", "consultor_session_id")
+
+
+@admin.register(SesionEjecutor)
+class SesionEjecutorAdmin(ReadOnlyModelAdmin):
+    list_display = ("chat", "slot", "estado", "iniciada_en")
+    list_filter = ("estado",)
+    search_fields = ("chat__titulo", "acp_session_id")
 
 
 @admin.register(EntradaSesion)

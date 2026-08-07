@@ -130,7 +130,7 @@ piezas:
     estado: construido
     pilar: 1
     fase: 3
-    adrs: [ADR-025]
+    adrs: [ADR-025, ADR-033]
     artefactos: [apps/sala/models.py, apps/sala/fields.py]
     prueba: "docker compose run --rm web python manage.py test apps.sala"
     construido_el: 2026-08-04
@@ -221,11 +221,6 @@ decisiones_abiertas:
       ADR-028 dejó fuera de su alcance.
     adr: ADR-025
     depende_de: "diseño de UI (Fase 5, cuando exista el panel)"
-
-  - id: modelo_datos_chat_consultor_ejecutor
-    texto: "Modelo de datos de Chat/sesión con Consultor y Ejecutor como piezas separadas."
-    adr: ADR-025
-    depende_de: "diseño técnico"
 
   - id: esquema_solicitud_permiso_v1
     texto: "Esquema real de SolicitudPermiso sobre los campos de session/request_permission v1."
