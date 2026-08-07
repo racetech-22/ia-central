@@ -41,8 +41,27 @@ fi
 # una sola fuente de verdad. No corre el comando "prueba" de cada pieza —
 # eso es declarativo, ver ADR-029.
 if echo "$staged_files" | grep -q '^docs/estado.yml$'; then
-  if ! docker compose run --rm web python manage.py validar_estado; then
-    echo "pre-commit: docs/estado.yml no pasa la validación. Commit bloqueado." >&2
+  # Preferir "exec" sobre el contenedor "web" ya corriendo, para no pagar el
+  # arranque de un contenedor nuevo en cada commit; "run --rm" queda como
+  # respaldo si "web" no está levantado (por ejemplo en un clon recién
+  # armado, antes del primer "docker compose up").
+  if docker compose ps --status running --services 2>/dev/null | grep -qx web; then
+    validador=(docker compose exec -T web python manage.py validar_estado)
+  else
+    validador=(docker compose run --rm -T web python manage.py validar_estado)
+  fi
+
+  if ! salida="$("${validador[@]}" 2>&1)"; then
+    # Distinguir "Docker no está disponible" de "docs/estado.yml es
+    # inválido" — antes ambos casos terminaban en el mismo mensaje, y un
+    # commit bloqueado porque el demonio de Docker no responde no es lo
+    # mismo que uno bloqueado porque el archivo tiene un error real.
+    if ! docker info >/dev/null 2>&1; then
+      echo "pre-commit: Docker no está disponible (¿demonio corriendo? ¿docker compose instalado?) — no se pudo validar docs/estado.yml. Commit bloqueado." >&2
+    else
+      echo "pre-commit: docs/estado.yml no pasa la validación. Commit bloqueado." >&2
+      echo "$salida" >&2
+    fi
     exit 1
   fi
 fi
