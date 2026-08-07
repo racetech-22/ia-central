@@ -147,6 +147,10 @@ Cualquier sesión con acceso a fetch web o shell (Cowork, claude.ai con búsqued
 
 **`docs/estado.yml` (ADR-029) reemplaza reconstruir el estado leyendo ADR una por una — la práctica de antes de esa ADR.** Da, en un solo archivo, el estado de cada pieza (construido/disenado/pendiente) y las decisiones abiertas. Piso mínimo al arrancar una sesión: ese archivo más solo las ADR del tema puntual de la tarea — queda permitido de forma expresa no abrir el resto, no hace falta un recorrido general.
 
+**Excepción que no se relaja: ARQUITECTURA.md §6 (el resumen de una línea por ADR) se lee siempre, esté o no la tarea relacionada con arquitectura.** Es el único índice barato de conexiones cruzadas entre decisiones — lo que permite detectar que algo nuevo rompe una condición de una ADR vieja de tema aparentemente ajeno. No es redundante con `docs/estado.yml`: ese archivo da estado de piezas, no las condiciones/cláusulas de invalidación que cruzan ADR entre sí.
+
+**Al introducir un actor, capacidad o componente nuevo, revisar las ADR cuya línea de §6 mencione una condición o una cláusula de invalidación** — una ADR puede quedar invalidada por algo que no es su tema. Evidencia real: el 2026-08-07, ADR-028 (Ejecutor) disparó la cláusula de invalidación del punto 3 de ADR-017 (condicionada a que ninguna tool permita lectura arbitraria del filesystem), conexión que ya era visible en la propia línea de ADR-017 en §6.
+
 **Protocolo de dos pasos, anclado a un SHA — no a `?v=` sobre la rama** (ver enmienda 2026-08-03 a ADR-011; el `?v=` quedó reemplazado, no complementado: el CDN de GitHub puede ignorar el query string para su cache key y fallar en silencio):
 
 1. Pedir `https://api.github.com/repos/racetech-22/ia-central/commits/master` para el SHA real del HEAD.
