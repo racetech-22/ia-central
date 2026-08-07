@@ -1,0 +1,296 @@
+# Fuente estructurada del mapa de ruta (/mapa/, apps/adminpanel/views.py). Ver ADR-029.
+#
+# "estado" es siempre uno de estos tres valores ASCII: construido | disenado | pendiente.
+# Las etiquetas con acentos ("diseñado, sin código") viven en el renderizador
+# (apps/adminpanel/estado.py), no acá — así el archivo no depende de encoding.
+#
+# Antes de commitear un cambio a este archivo: .githooks/pre-commit corre
+# "docker compose run --rm web python manage.py validar_estado", que bloquea
+# el commit si el esquema no cierra, si alguna ADR referenciada no existe como
+# archivo real en docs/decisiones/, o si a una pieza "construido" le falta
+# algún archivo declarado en "artefactos". El campo "prueba" es solo
+# informativo: ni el hook ni la suite lo ejecutan (ver ADR-029, decisión 5 y
+# aclaración 2).
+
+piezas:
+  # --- Base construida: piezas de infraestructura previas al modelo de 5
+  # pilares de ADR-024 (2026-08-03), por eso pilar: base en vez de un número.
+
+  - id: infraestructura_docker_tls
+    nombre: "Infraestructura"
+    resumen: "Docker y TLS"
+    estado: construido
+    pilar: base
+    fase: 2
+    adrs: [ADR-002, ADR-003]
+    artefactos: [docker-compose.yml, Dockerfile]
+    prueba: "docker compose run --rm web python manage.py check"
+    construido_el: 2026-07-30
+
+  - id: backups_postgres_sync
+    nombre: "Backups"
+    resumen: "pg_dump diario + sync a Drive"
+    estado: construido
+    pilar: base
+    fase: 2
+    adrs: [ADR-004, ADR-005]
+    artefactos: [scripts/backup_postgres.sh]
+    prueba: "bash scripts/backup_postgres.sh"
+    construido_el: 2026-07-30
+
+  - id: auditorias_automaticas
+    nombre: "Auditorías"
+    resumen: "memoria + ADR, automáticas"
+    estado: construido
+    pilar: base
+    fase: 2
+    adrs: [ADR-008, ADR-014, ADR-018]
+    artefactos: [scripts/memory_audit.sh, scripts/adr_audit.sh]
+    prueba: "bash scripts/adr_audit.sh"
+    construido_el: 2026-08-02
+
+  - id: notificaciones_ntfy
+    nombre: "Notificaciones"
+    resumen: "ntfy autohospedado"
+    estado: construido
+    pilar: base
+    fase: 2
+    adrs: [ADR-018]
+    artefactos: [docker-compose.yml]
+    prueba: null
+    construido_el: 2026-08-02
+
+  - id: mcp_server_tools
+    nombre: "MCP server"
+    resumen: "5 tools"
+    estado: construido
+    pilar: base
+    fase: 3
+    adrs: [ADR-020, ADR-022, ADR-023]
+    artefactos:
+      - mcp_servers/django_project/tools.py
+      - mcp_servers/django_project/security.py
+      - mcp_servers/django_project/server.py
+    prueba: "pytest mcp_servers/django_project/tests/ -v"
+    construido_el: 2026-08-03
+
+  - id: orquestador_sin_shell
+    nombre: "Orquestador"
+    resumen: "sin shell"
+    estado: construido
+    pilar: base
+    fase: 3
+    adrs: [ADR-015, ADR-016, ADR-017, ADR-021]
+    artefactos: [orchestrator/orchestrator.py]
+    prueba: >-
+      docker compose exec orchestrator python -c
+      "from orchestrator import run; print(run('responde solo PONG'))"
+    construido_el: 2026-08-03
+
+  - id: litellm_gateway
+    nombre: "LiteLLM"
+    resumen: "gateway de modelos"
+    estado: construido
+    pilar: base
+    fase: 3
+    adrs: [ADR-012]
+    artefactos: [litellm/config.yaml]
+    prueba: null
+    construido_el: 2026-08-01
+
+  - id: sidecar_admin_tasks
+    nombre: "admin-tasks"
+    resumen: "sidecar, sin Docker"
+    estado: construido
+    pilar: base
+    fase: 3
+    adrs: [ADR-023]
+    artefactos: [admin_tasks_server.py]
+    prueba: null
+    construido_el: 2026-08-03
+
+  - id: proxy_docker
+    nombre: "Proxy de Docker"
+    resumen: "docker-socket-proxy"
+    estado: construido
+    pilar: base
+    fase: 3
+    adrs: [ADR-022]
+    artefactos: [docker-compose.yml]
+    prueba: null
+    construido_el: 2026-08-03
+
+  # --- Pilar 1: Sala de discusión y memoria básica (ADR-024, ADR-025).
+  # Desglosado en subtareas porque es el pilar en curso — el resto (2-5)
+  # todavía no tiene desglose propio, son una sola pieza cada uno.
+
+  - id: pilar1_modelo_datos
+    nombre: "Modelo de datos"
+    resumen: "Proyecto, Chat, historial, permisos"
+    estado: construido
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025]
+    artefactos: [apps/sala/models.py, apps/sala/fields.py]
+    prueba: "docker compose run --rm web python manage.py test apps.sala"
+    construido_el: 2026-08-04
+
+  - id: pilar1_migracion_asgi
+    nombre: "Migración a ASGI"
+    resumen: "Daphne, Channels, Redis"
+    estado: construido
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025, ADR-026]
+    artefactos: [core/asgi.py]
+    prueba: "docker compose run --rm web python manage.py test apps"
+    construido_el: 2026-08-04
+
+  - id: pilar1_sala_navegador
+    nombre: "Sala en el navegador"
+    resumen: "chat y aprobaciones en pantalla"
+    estado: pendiente
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025]
+
+  - id: pilar1_ejecutor
+    nombre: "Ejecutor"
+    resumen: "agente ACP intercambiable (sin implementar)"
+    estado: disenado
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025, ADR-027, ADR-028]
+
+  - id: pilar1_protocolo_conexion_saliente
+    nombre: "Protocolo de conexión saliente"
+    resumen: "WebSocket sobre TLS"
+    estado: disenado
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025]
+
+  - id: pilar1_agente_instalado_externo
+    nombre: "Agente instalado en el VPS del proyecto"
+    resumen: "para sumar proyectos externos, como TacoraGo"
+    estado: pendiente
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025]
+
+  # --- Pilares 2-5: todavía una sola pieza cada uno, sin desglose propio.
+
+  - id: pilar2_motor_permisos
+    nombre: "Motor de confianza / permisos unificado"
+    resumen: "cuando haga falta ir más allá de Claude Code"
+    estado: pendiente
+    pilar: 2
+    fase: null
+    adrs: [ADR-024]
+
+  - id: pilar3_memoria_profunda_rag
+    nombre: "Memoria profunda, RAG"
+    resumen: "crece en paralelo desde el pilar 1"
+    estado: pendiente
+    pilar: 3
+    fase: 3
+    adrs: [ADR-024]
+
+  - id: pilar4_panel_administrativo
+    nombre: "Panel administrativo"
+    resumen: "naciendo pantalla por pantalla"
+    estado: pendiente
+    pilar: 4
+    fase: 5
+    adrs: [ADR-013, ADR-024]
+
+  - id: pilar5_multimodelo_debate
+    nombre: "Multi-modelo con debate"
+    resumen: "la pieza más compleja, al final"
+    estado: pendiente
+    pilar: 5
+    fase: 4
+    adrs: [ADR-012, ADR-024]
+
+decisiones_abiertas:
+  - id: pantalla_conectar_proyecto
+    texto: >-
+      Pantalla exacta del panel para "conectar proyecto nuevo": no diseñada;
+      debe cubrir instalación/autenticación de cualquier agente del catálogo
+      (ADR-027) y, para destinos externos, el aislamiento de proceso que
+      ADR-028 dejó fuera de su alcance.
+    adr: ADR-025
+    depende_de: "diseño de UI (Fase 5, cuando exista el panel)"
+
+  - id: modelo_datos_chat_consultor_ejecutor
+    texto: "Modelo de datos de Chat/sesión con Consultor y Ejecutor como piezas separadas."
+    adr: ADR-025
+    depende_de: "diseño técnico"
+
+  - id: esquema_solicitud_permiso_v1
+    texto: "Esquema real de SolicitudPermiso sobre los campos de session/request_permission v1."
+    adr: ADR-025
+    depende_de: "diseño técnico"
+
+  - id: aislamiento_ejecutor_destinos_externos
+    texto: >-
+      Aislamiento de proceso del Ejecutor para destinos externos — ADR-028
+      solo resuelve el caso nativo, depende de cómo se instale el agente en
+      cada destino.
+    adr: ADR-025
+    depende_de: "cómo se instale el agente en cada destino externo"
+
+  - id: verificacion_permisos_por_agente
+    texto: >-
+      Verificación por agente del catálogo: cuáles llaman a
+      session/request_permission con disciplina real, y si alguno tiene hook
+      equivalente a ADR-007.
+    adr: ADR-025
+    depende_de: "verificación empírica contra cada agente"
+
+  - id: acp_directo_o_via_goose
+    texto: "Si conviene que IA CENTRAL hable ACP directamente o a través de una implementación como Goose."
+    adr: ADR-027
+    depende_de: "decisión de diseño"
+
+  - id: can_use_tool_sin_sdk
+    texto: "Qué pasa con can_use_tool de ADR-025 punto 1 si el ejecutor deja de ser el Claude Agent SDK."
+    adr: ADR-027
+    depende_de: "reevaluación técnica"
+
+  - id: agentes_que_cumplen_filtro_catalogo
+    texto: "Qué agentes concretos cumplen el filtro de selección de la enmienda 2026-08-06 a ADR-027."
+    adr: ADR-027
+    depende_de: "verificación empírica"
+
+  - id: metrica_comparacion_agente_modelo
+    texto: >-
+      Qué métrica registra la sala por iteración para comparar combinaciones
+      agente+modelo, más allá del costo que ya entrega usage_update.
+    adr: ADR-027
+    depende_de: "diseño técnico"
+
+  - id: sdk_python_alcanza_o_proceso_separado
+    texto: "Si la librería de Python de ACP alcanza, o si el ejecutor necesita un proceso separado en otro lenguaje."
+    adr: ADR-027
+    depende_de: "maduración del SDK / verificación técnica"
+
+  - id: catalogo_config_o_curado
+    texto: "Si el catálogo de agentes se define por configuración de despliegue o por lista curada en el repo."
+    adr: ADR-027
+    depende_de: "decisión de Fernando"
+
+  - id: escritura_fuera_arbol_trabajo_ejecutor
+    texto: "Escritura legítima del Ejecutor fuera de su propio árbol de trabajo: declarado fuera de alcance de ADR-028, sin resolver."
+    adr: ADR-028
+    depende_de: "diseño técnico"
+
+  - id: granularidad_contenedor_ejecutor
+    texto: "Granularidad del contenedor del Ejecutor (uno por proyecto o uno por chat) y quién gestiona su ciclo de vida."
+    adr: ADR-028
+    depende_de: "diseño técnico"
+
+  - id: ubicacion_cliente_acp
+    texto: "Dónde corre el proceso cliente ACP del lado de IA CENTRAL: dentro de web/Daphne o como servicio propio."
+    adr: ADR-028
+    depende_de: "diseño técnico"

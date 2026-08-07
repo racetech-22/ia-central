@@ -2,33 +2,49 @@
 set -euo pipefail
 
 INDEX_FILE="docs/decisiones/INDEX.md"
+staged_files="$(git diff --cached --name-only)"
 
-if ! git diff --cached --name-only | grep -q '^docs/decisiones/'; then
-  exit 0
+# --- Validación 1: docs/decisiones/INDEX.md contra los archivos ADR reales.
+# Disparador propio: solo corre si el commit toca algo bajo docs/decisiones/.
+if echo "$staged_files" | grep -q '^docs/decisiones/'; then
+  if [ ! -f "$INDEX_FILE" ]; then
+    echo "pre-commit: falta $INDEX_FILE" >&2
+    exit 1
+  fi
+
+  real_files=$(ls docs/decisiones/ADR-*.md 2>/dev/null | xargs -n1 basename | sort)
+  indexed_files=$(grep -oE 'ADR-[0-9]{3}-[a-zA-Z0-9-]+.md' "$INDEX_FILE" | sort -u)
+
+  missing_in_index=$(comm -23 <(echo "$real_files") <(echo "$indexed_files"))
+  orphan_in_index=$(comm -13 <(echo "$real_files") <(echo "$indexed_files"))
+
+  if [ -n "$missing_in_index" ] || [ -n "$orphan_in_index" ]; then
+    echo "pre-commit: INDEX.md desactualizado respecto a docs/decisiones/. Commit bloqueado." >&2
+    if [ -n "$missing_in_index" ]; then
+      echo "  Archivos reales sin entrada en INDEX.md:" >&2
+      echo "$missing_in_index" | sed 's/^/    /' >&2
+    fi
+    if [ -n "$orphan_in_index" ]; then
+      echo "  Entradas de INDEX.md sin archivo real correspondiente:" >&2
+      echo "$orphan_in_index" | sed 's/^/    /' >&2
+    fi
+    exit 1
+  fi
 fi
 
-if [ ! -f "$INDEX_FILE" ]; then
-  echo "pre-commit: falta $INDEX_FILE" >&2
-  exit 1
-fi
-
-real_files=$(ls docs/decisiones/ADR-*.md 2>/dev/null | xargs -n1 basename | sort)
-indexed_files=$(grep -oE 'ADR-[0-9]{3}-[a-zA-Z0-9-]+.md' "$INDEX_FILE" | sort -u)
-
-missing_in_index=$(comm -23 <(echo "$real_files") <(echo "$indexed_files"))
-orphan_in_index=$(comm -13 <(echo "$real_files") <(echo "$indexed_files"))
-
-if [ -n "$missing_in_index" ] || [ -n "$orphan_in_index" ]; then
-  echo "pre-commit: INDEX.md desactualizado respecto a docs/decisiones/. Commit bloqueado." >&2
-  if [ -n "$missing_in_index" ]; then
-    echo "  Archivos reales sin entrada en INDEX.md:" >&2
-    echo "$missing_in_index" | sed 's/^/    /' >&2
+# --- Validación 2: docs/estado.yml (ADR-029). Disparador propio e
+# independiente del de arriba: si colgara del mismo "toca docs/decisiones/",
+# un commit que solo edite docs/estado.yml (que vive fuera de esa carpeta)
+# pasaría sin validar nada. Delegada al management command de Django
+# (esquema, ADRs referenciadas, artefactos de piezas "construido") en vez de
+# reimplementarla en bash: misma validación que corre la suite de tests,
+# una sola fuente de verdad. No corre el comando "prueba" de cada pieza —
+# eso es declarativo, ver ADR-029.
+if echo "$staged_files" | grep -q '^docs/estado.yml$'; then
+  if ! docker compose run --rm web python manage.py validar_estado; then
+    echo "pre-commit: docs/estado.yml no pasa la validación. Commit bloqueado." >&2
+    exit 1
   fi
-  if [ -n "$orphan_in_index" ]; then
-    echo "  Entradas de INDEX.md sin archivo real correspondiente:" >&2
-    echo "$orphan_in_index" | sed 's/^/    /' >&2
-  fi
-  exit 1
 fi
 
 exit 0

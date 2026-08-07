@@ -1,0 +1,46 @@
+# ADR-029 - El mapa de ruta se deriva de un archivo de estado versionado, no se dibuja a mano
+
+Fecha: 2026-08-07
+Estado: Aceptada
+
+## Contexto
+
+El mapa (`/mapa/`, `apps/adminpanel/templates/adminpanel/mapa.html`) tiene tres días de vida y ya acumuló dos desvíos documentados: el 2026-08-04 la auditoría de ADR-014 lo encontró mostrando el modelo de datos de la sala como "diseñado" cuando ya estaba construido (corregido el mismo día, commit `5c17f51`); y el 2026-08-07 se encontró el protocolo de conexión saliente pintado como "pendiente" pese a que ADR-025 §9 lo da por resuelto desde el 2026-08-06, con el estado "diseñado, sin código" prácticamente sin usar hasta ese momento (una sola pieza, el modelo de datos, lo había llevado a "construido"; el resto del mapa vivía en dos únicos estados de hecho).
+
+La causa está escrita en el pie de página del propio archivo anterior: actualizarlo exige intercambiar `fill`/`stroke` y la clase del texto entre `t`/`ts`, `ta`/`tsa` y `tg`/`tsg` a mano, y agregar una caja obliga a recalcular a mano las coordenadas `x`/`y` de todo lo que va debajo, más la altura del `viewBox`. Es una convención documentada (el propio pie de página la explica) que no está forzada por ningún código — exactamente el patrón que CLAUDE.md manda cazar: una convención que depende de que alguien se acuerde de aplicarla, no un chequeo determinista.
+
+## Decisión
+
+1. **`docs/estado.yml` pasa a ser la fuente estructurada**, con dos secciones:
+   - **`piezas`**: cada una con identificador estable (`id`), nombre, un resumen breve opcional para la caja (`resumen`, decorativo — no lo valida el hook ni lo lee ninguna ADR), estado, pilar (`base` para infraestructura previa al modelo de 5 pilares de ADR-024, o el número 1-5), fase de ARQUITECTURA.md §5 (puede ser nula: el pilar 2 todavía no tiene fase fija), las ADR que la respaldan (`adrs`), y — solo si el estado es `construido` — los archivos del repo que la prueban (`artefactos`), un comando de prueba opcional (`prueba`) y la fecha en que pasó a construido (`construido_el`, sacada de CHANGELOG.md).
+   - **`decisiones_abiertas`**: cada una con su texto, la ADR a la que pertenece (`adr`) y de quién depende que se resuelva (`depende_de`). Hoy ese contenido vive disperso en las secciones "Abierto, no resuelto" de ADR-025, ADR-027 y ADR-028 (y, en ADR-028, en su sección "Alcance"), donde el Director no lo ve nunca sin ir ADR por ADR.
+
+2. **Los valores de `estado` en el archivo son ASCII**: `construido` / `disenado` / `pendiente`. Las etiquetas con acentos ("diseñado, sin código") viven en el renderizador (`apps/adminpanel/estado.py`), no en el dato — así el archivo no depende de encoding y el esquema queda estable si algún día cambia el texto exacto de una etiqueta.
+
+3. **La vista lee ese archivo y renderiza.** Se reemplaza el SVG dibujado a mano por HTML y CSS: el SVG no aportaba nada (son cajas y texto, nunca hubo un gráfico real), y es la causa mecánica del problema — coordenadas absolutas que hay que recalcular a mano. Se conservan las tres propiedades buenas del mapa actual: sin JavaScript, sin consultas a la base de datos, acceso restringido a superusuario (`user_passes_test`, sin cambios).
+
+4. **Tres capas de verificación, de dureza decreciente:**
+   - El hook de pre-commit de ADR-018 (`.githooks/pre-commit`) valida esquema, que cada ADR referenciada exista como archivo real en `docs/decisiones/`, y que exista en disco cada artefacto de una pieza marcada `construido` — bloquea el commit.
+   - Un test en la suite (`apps/adminpanel/tests.py`) corre la misma validación.
+   - La verificación (f) de `scripts/adr_audit.sh` se reapunta: deja de comparar el mapa contra las ADR (esa contradicción pasa a ser imposible por construcción, la capa anterior ya la bloquea antes de que llegue a existir en `master`) y pasa a comparar el estado declarado en `docs/estado.yml` contra lo que dice la prosa de cada ADR — que es lo único que un chequeo determinista no puede ver (si una pieza dice `pendiente` pero la ADR correspondiente ya la da por resuelta en su texto, eso es un juicio de lectura, no un chequeo de existencia de archivo).
+
+   **Reparto deliberado entre el hook y el test, no una elección arbitraria**: el hook cubre el caso "cambió `docs/estado.yml`" — dispara solo cuando ese archivo está en el commit, y ahí sí puede permitirse bloquear. El test de la suite cubre además el caso inverso, que el hook no puede ver barato sin ejecutarse en cada commit sobre cualquier archivo del repo: que alguien borre o mueva un archivo que una pieza marcada `construido` declara como artefacto, sin tocar `docs/estado.yml` en ese mismo commit. Como el test corre siempre (no solo cuando el archivo de estado cambia), ese caso queda cubierto igual, solo que se detecta en la corrida de la suite en vez de bloquear ese commit puntual.
+
+5. **El hook NO ejecuta el comando de prueba (`prueba`) de cada pieza**: demasiado lento para el camino de cada commit, y potencialmente con efectos (algunos de esos comandos tocan la base real o reinician contenedores). Correr pruebas es trabajo de la suite y de la auditoría, no del hook — el campo `prueba` es dato declarativo, no un ejecutor de pruebas: hoy nadie lo corre automáticamente, ni el hook ni la suite. Queda como referencia para cuando la auditoría o un mecanismo futuro decida usarlo, sin construir ningún ejecutor de pruebas para esto ahora.
+
+El renderizador muestra la fase de cada pieza (etiqueta "Fase N" junto a cada pilar de pieza única y junto a cada subtarea), no solo la guarda en el archivo — Fernando pidió explícitamente poder ver el cierre de tareas y de fases en la misma vista.
+
+## Alternativas descartadas
+
+- **Mantener el SVG a mano y solo reforzar la auditoría**: no ataca la causa (la convención documentada, no forzada por código, sigue intacta), y la tasa de desvío medida es de dos discrepancias reales en tres días de vida del archivo — reforzar una auditoría que ya corre semanalmente no habría evitado ninguna de las dos, que se encontraron por revisión puntual, no por el cron.
+- **Guardar el estado en Postgres y editarlo desde el panel**: sacaría la fuente de verdad de Git, en contra de ADR-011 (todo se lee en vivo desde GitHub) y ADR-002 (portabilidad completa vía `docker compose up` + restore de datos — un estado que solo vive en la base de un servidor no viaja igual que un archivo versionado). Además el panel administrativo es Fase 5 (ADR-013): cuando exista, la vía correcta es que renderice este mismo archivo, no que lo reemplace.
+- **Usar JSON en vez de YAML**: evitaría agregar una dependencia (`PyYAML`), pero JSON no admite comentarios y este archivo lo editan personas — el archivo semilla ya usa comentarios para explicar el disparador del hook y la convención de estados ASCII, precisamente el tipo de contexto que un archivo de máquina pura no puede llevar consigo.
+
+## Consecuencias
+
+- `PyYAML==6.0.3` se agrega a `requirements.txt` y a `docs/DEPENDENCIAS.md` (ADR-019) — primera dependencia nueva de este cambio.
+- `apps/adminpanel/estado.py` es la única implementación de la validación (esquema, existencia de ADR, existencia de artefactos): la usan la vista, el management command `validar_estado` (invocado por el hook vía `docker compose run --rm web`) y los tests. Evita mantener la misma lógica por separado en bash y en Python.
+- El hook depende de que `docker compose` esté disponible y de que la imagen `web` pueda correr en el momento del commit — coherente con que todo el desarrollo de este proyecto ya pasa por `docker compose` (no hay entorno virtual local, ver CLAUDE.md), no una dependencia nueva.
+- **Cierra un hueco de ADR-018 que hasta hoy nada detectaba**: `git config core.hooksPath .githooks` es activación manual por clon (no viaja con `git clone`, ADR-018 ya lo documentaba) — si queda desactivada en un clon nuevo (VPS o máquina local), el hook de pre-commit completo (esta validación y la de INDEX.md) deja de proteger nada, sin que ningún mecanismo lo avise. El test nuevo (`apps/adminpanel/tests.py`, `HooksPathActivadoTests`) agrega una línea que falla si `core.hooksPath` no apunta a `.githooks`, leyendo `.git/config` directamente (el contenedor `web` no tiene el binario `git` instalado, así que no puede invocar `git config` — el archivo sí es legible vía el volumen `.:/app`).
+- El desglose visual del pilar 1 en seis subtareas y las nueve piezas de "Base construida" (las cuatro que ya estaban en el mapa anterior más LiteLLM, backups con su sync, el sidecar `admin-tasks`, el proxy de Docker y las notificaciones por ntfy, que el mapa anterior dejaba afuera) quedan sembradas en `docs/estado.yml` con las fechas reales de CHANGELOG.md. Cualquier pieza nueva que se agregue de acá en más se declara en ese archivo, no se dibuja.
+- El campo `resumen` de cada pieza no estaba en la lista mínima negociada originalmente para esta ADR; se agregó durante la implementación porque las cajas necesitaban una línea descriptiva corta para seguir siendo legibles (igual que el mapa anterior tenía una segunda línea de texto por caja) — es decorativo, no lo valida el hook ni lo usa ninguna otra pieza de este sistema. Documentado acá para que esta ADR no contradiga al esquema real.

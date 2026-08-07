@@ -17,16 +17,48 @@
   h1{font-size:22px;font-weight:500;margin:0 0 .25rem}
   .meta{font-size:13px;color:var(--text-2);margin:0 0 1.5rem}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
-  .t{font:500 14px system-ui,sans-serif;fill:var(--text)}
-  .ts{font:400 12px system-ui,sans-serif;fill:var(--text-2)}
-  .th{font:500 14px system-ui,sans-serif;fill:var(--text-2)}
-  .tg{font:500 14px system-ui,sans-serif;fill:var(--ok-text)}
-  .tsg{font:400 12px system-ui,sans-serif;fill:var(--ok-text)}
-  .ta{font:500 14px system-ui,sans-serif;fill:var(--now-text)}
-  .tsa{font:400 12px system-ui,sans-serif;fill:var(--now-text)}
-  .tsub{font:400 14px system-ui,sans-serif;fill:var(--text)}
-  .tsubg{font:400 14px system-ui,sans-serif;fill:var(--ok-text)}
-  .tsuba{font:400 14px system-ui,sans-serif;fill:var(--now-text)}
+  h2.seccion{font:500 13px system-ui,sans-serif;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:.03em;margin:0 0 .65rem}
+  h2.seccion:not(:first-child){margin-top:1.75rem}
+
+  .grid-base{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+  .caja{border-radius:8px;border:1px solid var(--border);background:var(--surface);padding:.55rem .75rem}
+  .caja .nombre{font:500 14px system-ui,sans-serif;margin:0}
+  .caja .resumen{font:400 12px system-ui,sans-serif;color:var(--text-2);margin:.1rem 0 0}
+  .caja.construido{background:var(--ok-bg);border-color:var(--ok-border)}
+  .caja.construido .nombre,.caja.construido .resumen{color:var(--ok-text)}
+
+  .pilar{border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    padding:.85rem 1rem;margin:0 0 .6rem}
+  .pilar.mixto{background:var(--now-bg);border-color:var(--now-border)}
+  .pilar.construido{background:var(--ok-bg);border-color:var(--ok-border)}
+  .pilar .titulo{font:500 14px system-ui,sans-serif;display:flex;
+    justify-content:space-between;align-items:baseline;gap:.5rem}
+  .pilar.mixto .titulo,.pilar.mixto .resumen-pilar{color:var(--now-text)}
+  .pilar.construido .titulo,.pilar.construido .resumen-pilar{color:var(--ok-text)}
+  .pilar .resumen-pilar{font:400 12px system-ui,sans-serif;color:var(--text-2);margin:.15rem 0 0}
+  .fase{font:400 11px system-ui,sans-serif;color:var(--text-2);border:1px solid var(--border);
+    border-radius:99px;padding:.05rem .55rem;white-space:nowrap;flex-shrink:0}
+
+  .subtareas{margin:.7rem 0 0;display:flex;flex-direction:column;gap:.4rem}
+  .subtarea{border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    padding:.5rem .75rem;display:flex;justify-content:space-between;align-items:baseline;gap:.6rem}
+  .subtarea.construido{background:var(--ok-bg);border-color:var(--ok-border)}
+  .subtarea.construido .nombre{color:var(--ok-text)}
+  .subtarea.disenado{background:var(--now-bg);border-color:var(--now-border)}
+  .subtarea.disenado .nombre{color:var(--now-text)}
+  .subtarea .nombre{font:400 14px system-ui,sans-serif}
+
+  .leyenda{display:flex;flex-wrap:wrap;gap:1.1rem;margin-top:1.5rem;font-size:12px;color:var(--text-2)}
+  .punto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.4rem;vertical-align:middle}
+  .punto.construido{background:var(--ok-bg);border:1px solid var(--ok-border)}
+  .punto.disenado,.punto.mixto{background:var(--now-bg);border:1px solid var(--now-border)}
+  .punto.pendiente{background:var(--surface);border:1px solid var(--border)}
+
+  .abiertas{margin:0;padding-left:1.1rem}
+  .abiertas li{font-size:13px;margin-bottom:.5rem;line-height:1.4}
+  .abiertas .detalle{color:var(--text-2);font-size:12px}
+
   .foot{font-size:13px;color:var(--text-2);margin-top:1.25rem;line-height:1.6}
   .foot code{background:#f0eeea;padding:.1rem .3rem;border-radius:4px;font-size:12px}
 </style>
@@ -34,62 +66,55 @@
 <body>
 <div class="wrap">
   <h1>Hoja de ruta — IA CENTRAL</h1>
-  <p class="meta">Fuente de verdad: ARQUITECTURA.md y docs/decisiones/ en el repo. Esta página es un resumen visual, no reemplaza a las ADR.</p>
+  <p class="meta">Fuente de verdad: ARQUITECTURA.md y docs/decisiones/ en el repo. Esta página se genera desde <code>docs/estado.yml</code> (ver ADR-029) y es un resumen visual, no reemplaza a las ADR.</p>
   <div class="card">
-<svg width="100%" viewBox="0 0 680 764" role="img">
-<title>Mapa de ruta de IA CENTRAL</title>
-<desc>Base construida, los cinco pilares en orden, y el desglose del pilar 1 en subtareas.</desc>
-<text x="40" y="30" class="th">Base construida</text>
-<rect x="40" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="107" y="70" class="tg" text-anchor="middle">Infraestructura</text>
-<text x="107" y="90" class="tsg" text-anchor="middle">Docker y TLS</text>
-<rect x="195" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="262" y="70" class="tg" text-anchor="middle">MCP server</text>
-<text x="262" y="90" class="tsg" text-anchor="middle">5 tools</text>
-<rect x="350" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="417" y="70" class="tg" text-anchor="middle">Orquestador</text>
-<text x="417" y="90" class="tsg" text-anchor="middle">sin shell</text>
-<rect x="505" y="44" width="135" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="572" y="70" class="tg" text-anchor="middle">Auditorías</text>
-<text x="572" y="90" class="tsg" text-anchor="middle">automáticas</text>
-<text x="40" y="140" class="th">Pilares, en orden de prioridad</text>
-<rect x="40" y="152" width="600" height="62" rx="8" fill="var(--now-bg)" stroke="var(--now-border)"/>
-<text x="60" y="178" class="ta">1 &#183; Sala de discusión y memoria básica</text>
-<text x="60" y="198" class="tsa">hecho: el modelo de datos, ASGI. falta: la sala y el ejecutor</text>
-<rect x="60" y="222" width="580" height="34" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="78" y="244" class="tsubg">Modelo de datos &#183; Proyecto, Chat, historial, permisos</text>
-<rect x="60" y="262" width="580" height="34" rx="8" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="78" y="284" class="tsubg">Migración a ASGI &#183; Daphne, Channels, Redis</text>
-<rect x="60" y="302" width="580" height="34" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="78" y="324" class="tsub">Sala en el navegador &#183; chat y aprobaciones en pantalla</text>
-<rect x="60" y="342" width="580" height="34" rx="8" fill="var(--now-bg)" stroke="var(--now-border)"/>
-<text x="78" y="364" class="tsuba">Ejecutor &#183; agente ACP intercambiable (sin implementar)</text>
-<text x="60" y="398" class="ts">para sumar proyectos externos, como TacoraGo</text>
-<rect x="60" y="408" width="580" height="34" rx="8" fill="var(--now-bg)" stroke="var(--now-border)"/>
-<text x="78" y="430" class="tsuba">Protocolo de conexión saliente &#183; WebSocket sobre TLS</text>
-<rect x="60" y="448" width="580" height="34" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="78" y="470" class="tsub">Agente instalado en el VPS del proyecto</text>
-<rect x="40" y="500" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="60" y="522" class="t">2 &#183; Motor de permisos unificado</text>
-<text x="60" y="540" class="ts">cuando haga falta ir más allá de los permisos de Claude Code</text>
-<rect x="40" y="562" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="60" y="584" class="t">3 &#183; Memoria profunda, RAG</text>
-<text x="60" y="602" class="ts">crece en paralelo desde el pilar 1, sin bloquear nada</text>
-<rect x="40" y="624" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="60" y="646" class="t">4 &#183; Panel administrativo</text>
-<text x="60" y="664" class="ts">fase 5, naciendo pantalla por pantalla según haga falta</text>
-<rect x="40" y="686" width="600" height="52" rx="8" fill="var(--surface)" stroke="var(--border)"/>
-<text x="60" y="708" class="t">5 &#183; Multi-modelo con debate</text>
-<text x="60" y="726" class="ts">fase 4, la pieza más compleja, deliberadamente al final</text>
-<circle cx="46" cy="754" r="5" fill="var(--ok-bg)" stroke="var(--ok-border)"/>
-<text x="58" y="758" class="ts">construido</text>
-<circle cx="146" cy="754" r="5" fill="var(--now-bg)" stroke="var(--now-border)"/>
-<text x="158" y="758" class="ts">diseñado, sin código</text>
-<circle cx="296" cy="754" r="5" fill="var(--surface)" stroke="var(--border)"/>
-<text x="308" y="758" class="ts">pendiente</text>
-</svg>
+
+    <h2 class="seccion">Base construida</h2>
+    <div class="grid-base">
+      {% for pieza in base %}
+      <div class="caja {{ pieza.estado }}">
+        <p class="nombre">{{ pieza.nombre }}</p>
+        <p class="resumen">{{ pieza.resumen }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h2 class="seccion">Pilares, en orden de prioridad</h2>
+    {% for pilar in pilares %}
+    <div class="pilar {{ pilar.estado }}">
+      <div class="titulo">
+        <span>{{ pilar.numero }} &#183; {{ pilar.nombre }}</span>
+        {% if pilar.fase %}<span class="fase">Fase {{ pilar.fase }}</span>{% endif %}
+      </div>
+      <p class="resumen-pilar">{{ pilar.resumen }} &mdash; {{ pilar.etiqueta }}</p>
+      {% if pilar.subtareas %}
+      <div class="subtareas">
+        {% for s in pilar.subtareas %}
+        <div class="subtarea {{ s.estado }}">
+          <span class="nombre">{{ s.nombre }} &#183; {{ s.resumen }}</span>
+          <span class="fase">Fase {{ s.fase|default:"&mdash;" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="leyenda">
+      <span><span class="punto construido"></span>construido</span>
+      <span><span class="punto disenado"></span>diseñado, sin código</span>
+      <span><span class="punto pendiente"></span>pendiente</span>
+    </div>
+
+    <h2 class="seccion">Decisiones abiertas</h2>
+    <ul class="abiertas">
+      {% for d in decisiones_abiertas %}
+      <li>{{ d.texto }} <span class="detalle">({{ d.adr }} &middot; depende de: {{ d.depende_de }})</span></li>
+      {% endfor %}
+    </ul>
+
   </div>
-  <p class="foot">Para actualizar el mapa se edita este archivo y se commitea. Los estados se cambian intercambiando <code>fill</code>/<code>stroke</code> de cada caja y la clase del texto entre <code>t</code>/<code>ts</code>, <code>ta</code>/<code>tsa</code> y <code>tg</code>/<code>tsg</code>.</p>
+  <p class="foot">Para actualizar el mapa se edita <code>docs/estado.yml</code> (ver ADR-029) y se commitea — nunca este HTML. El hook de pre-commit (<code>.githooks/pre-commit</code>) valida el archivo antes de aceptar el commit: esquema, que cada ADR referenciada exista, y que exista en disco cada artefacto de una pieza marcada construida.</p>
 </div>
 </body>
 </html>
