@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sala — {{ chat.titulo|default:chat.consultor_session_id|default:"chat" }}</title>
+<style>
+  body{margin:0;padding:2rem 1rem 3rem;background:#faf9f7;color:#1a1a1a;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:22px;font-weight:500;margin:0 0 .25rem}
+  .meta{font-size:13px;color:#6b6862;margin:0 0 1.5rem}
+  .card{background:#fff;border:1px solid #e0ddd8;border-radius:12px;padding:1.25rem}
+  .estado{display:inline-block;padding:.2rem .6rem;border-radius:99px;font-size:12px;
+    border:1px solid #e0ddd8}
+  .estado.conectando,.estado.reconectando{background:#e6f0fa;border-color:#7aa9d6;color:#1f5182}
+  .estado.conectado{background:#e9f5ec;border-color:#7ab88b;color:#2c6b41}
+  .estado.desconectado{background:#faeceb;border-color:#d68b7a;color:#82301f}
+  ul{list-style:none;margin:1rem 0 0;padding:0;font-family:ui-monospace,monospace;font-size:12px}
+  li{border-bottom:1px solid #eee;padding:.35rem 0;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>{{ chat.titulo|default:chat.consultor_session_id|default:"(sin título)" }}</h1>
+  <p class="meta"><a href="{% url 'lista_chats' %}">&larr; volver a la lista</a> — vista andamio (ADR-035), no la pantalla final.</p>
+  <div class="card">
+    <p>Estado del socket: <span id="estado" class="estado conectando">conectando</span></p>
+    <ul id="eventos"></ul>
+  </div>
+</div>
+<script>
+(function () {
+  var chatId = {{ chat.id }};
+  var protocolo = window.location.protocol === "https:" ? "wss://" : "ws://";
+  var url = protocolo + window.location.host + "/ws/sala/" + chatId + "/";
+
+  var estadoEl = document.getElementById("estado");
+  var eventosEl = document.getElementById("eventos");
+  var intentos = 0;
+  var socket = null;
+
+  function marcarEstado(texto, clase) {
+    estadoEl.textContent = texto;
+    estadoEl.className = "estado " + clase;
+  }
+
+  function agregarEvento(payload) {
+    var li = document.createElement("li");
+    li.textContent = JSON.stringify(payload);
+    eventosEl.prepend(li);
+  }
+
+  function conectar() {
+    marcarEstado(intentos === 0 ? "conectando" : "reconectando", intentos === 0 ? "conectando" : "reconectando");
+    socket = new WebSocket(url);
+
+    socket.onopen = function () {
+      intentos = 0;
+    };
+
+    socket.onmessage = function (evento) {
+      var payload;
+      try {
+        payload = JSON.parse(evento.data);
+      } catch (e) {
+        payload = { tipo: "error", detalle: "no se pudo interpretar el mensaje" };
+      }
+      if (payload.tipo === "conectado") {
+        marcarEstado("conectado", "conectado");
+      }
+      agregarEvento(payload);
+    };
+
+    socket.onclose = function () {
+      marcarEstado("desconectado", "desconectado");
+      programarReconexion();
+    };
+
+    socket.onerror = function () {
+      socket.close();
+    };
+  }
+
+  function programarReconexion() {
+    // Backoff exponencial con tope de 60s y jitter (ADR-025 §9.5).
+    intentos += 1;
+    var base = Math.min(60000, 1000 * Math.pow(2, intentos));
+    var jitter = Math.random() * base * 0.2;
+    var espera = base + jitter;
+    setTimeout(conectar, espera);
+  }
+
+  conectar();
+})();
+</script>
+</body>
+</html>

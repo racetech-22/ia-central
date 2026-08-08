@@ -146,6 +146,17 @@ piezas:
     prueba: "docker compose run --rm web python manage.py test apps"
     construido_el: 2026-08-04
 
+  - id: pilar1_rutas_websocket
+    nombre: "Rutas de WebSocket"
+    resumen: "consumer de la sala, un grupo por chat"
+    estado: construido
+    pilar: 1
+    fase: 3
+    adrs: [ADR-025, ADR-026, ADR-035]
+    artefactos: [core/asgi.py, apps/sala/routing.py, apps/sala/consumers.py]
+    prueba: "docker compose run --rm web python manage.py test apps.sala"
+    construido_el: 2026-08-08
+
   - id: pilar1_sala_navegador
     nombre: "Sala en el navegador"
     resumen: "chat y aprobaciones en pantalla"
