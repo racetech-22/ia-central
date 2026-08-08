@@ -90,18 +90,24 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            # socket_timeout=None es obligatorio con redis-py>=8.0.0: esa
-            # versión cambió el default de socket_timeout a 5s, el mismo
-            # valor que channels_redis usa internamente para su BRPOP/
-            # BZPOPMIN bloqueante en receive() — el timeout de socket corta
-            # la lectura antes de que el bloqueo normal pueda resolver, y
-            # RedisChannelLayer.receive() tira redis.exceptions.TimeoutError
-            # cada ~5s en vez de esperar en silencio. Error real observado
-            # en este VPS el 2026-08-08 (ver CHANGELOG.md) y documentado en
-            # https://github.com/django/channels_redis/issues/422, con el
-            # mismo traceback exacto y este mismo fix confirmado por varios
-            # reportantes — channels_redis 4.3.0 todavía no lo aplica solo.
-            "hosts": [{"host": "redis", "port": 6379, "socket_timeout": None}],
+            # socket_timeout=10 es obligatorio con redis-py>=8.0.0, y tiene
+            # que ser mayor que 5. Verificado contra el código fuente real
+            # de channels_redis==4.3.0: RedisChannelLayer.brpop_timeout = 5
+            # (atributo de clase), y receive_single() hace
+            # "while content is None: content = await self._brpop_with_clean(
+            # ..., timeout=self.brpop_timeout)" sin try/except alrededor —
+            # ese bucle asume que agotar el timeout de BRPOP/BZPOPMIN
+            # devuelve None para seguir esperando, nunca que lanza una
+            # excepción. redis-py 8.0.0 cambió el default de su propio
+            # socket_timeout a 5s; si el socket corta en 5s o menos, el
+            # timeout de socket gana la carrera contra el timeout del
+            # comando y la excepción sube sin capturar, tumbando el
+            # WebSocket. Error real observado en este VPS el 2026-08-08 (ver
+            # CHANGELOG.md) y documentado en
+            # https://github.com/django/channels_redis/issues/422, mismo
+            # traceback exacto — channels_redis 4.3.0 todavía no lo aplica
+            # solo.
+            "hosts": [{"host": "redis", "port": 6379, "socket_timeout": 10}],
         },
     },
 }
