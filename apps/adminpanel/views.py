@@ -1,9 +1,11 @@
 from collections import defaultdict
 
 from django.contrib.auth.decorators import user_passes_test
+from django.http import JsonResponse
 from django.shortcuts import render
 
 from apps.adminpanel.estado import ETIQUETA_PILAR_MIXTO, ETIQUETAS_ESTADO, cargar_estado
+from apps.adminpanel.salud import estado_de_salud
 
 # Nombre y resumen de cada uno de los cinco pilares de ADR-024 — taxonomía
 # fija que solo cambia si se enmienda esa ADR, a diferencia del estado de
@@ -79,3 +81,12 @@ def mapa(request):
         "decisiones_abiertas": datos.get("decisiones_abiertas", []),
     }
     return render(request, "adminpanel/mapa.html", contexto)
+
+
+def salud(request):
+    """Chequeo de salud del sistema vivo (ADR-037). Sin autenticación a
+    propósito: no expone datos de negocio, el SHA no es secreto (el repo ya
+    es público, ADR-011) — así scripts/chequeo_despliegue.sh no necesita
+    guardar credenciales de superusuario."""
+    datos, sano = estado_de_salud()
+    return JsonResponse(datos, status=200 if sano else 503)

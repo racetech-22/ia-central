@@ -20,11 +20,19 @@ services:
     restart: unless-stopped
 
   web:
-    build: .
+    build:
+      context: .
+      # GIT_SHA se toma de la variable de entorno del mismo nombre en el
+      # momento de "docker compose build" (ver env.example) — horneado en
+      # la imagen para que /salud/ (ADR-037) pueda reportar qué commit está
+      # corriendo de verdad, sin depender de que alguien se acuerde.
+      args:
+        GIT_SHA: ${GIT_SHA:-desconocido}
     restart: unless-stopped
     # daphne en vez de runserver (ADR-025 §9.7, ADR-026) — ProtocolTypeRouter
-    # de core/asgi.py, sin rutas de websocket todavía. Escucha 0.0.0.0:8000
-    # dentro del contenedor; el mapeo al host sigue siendo solo 127.0.0.1.
+    # de core/asgi.py, con las rutas de websocket de ADR-035. Escucha
+    # 0.0.0.0:8000 dentro del contenedor; el mapeo al host sigue siendo
+    # solo 127.0.0.1.
     command: ["daphne", "-b", "0.0.0.0", "-p", "8000", "core.asgi:application"]
     env_file:
       - .env

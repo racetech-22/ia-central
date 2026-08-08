@@ -42,3 +42,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-034 | ADR-034-historial-ejecutor-y-solicitud-permiso-acp.md |
 | ADR-035 | ADR-035-rutas-websocket-sala.md |
 | ADR-036 | ADR-036-principio-maxima-capacidad-operador-unico.md |
+| ADR-037 | ADR-037-chequeo-sistema-vivo-desplegado.md |
