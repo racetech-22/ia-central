@@ -39,3 +39,13 @@ Cierra la subtarea de rutas de WebSocket. **No** construye la sala: `pilar1_sala
 - **La verificación tiene que incluir recrear el contenedor `web`.** El hallazgo del 2026-08-07 fue exactamente un contenedor de larga vida que no se recreó tras un cambio: la suite en verde no prueba que el sitio real esté corriendo el código nuevo.
 - **Queda sin resolver la autorización por chat.** Hoy cualquier superusuario puede conectarse a cualquier chat, porque hay un solo usuario. Cuando exista más de uno, hace falta una comprobación de pertenencia — anotado, no implementado.
 - **El consumer no persiste nada.** Solo reenvía lo que llega por el grupo. Quién escribe en `ActualizacionSesion` y `LlamadaHerramienta` (ADR-034) es el cliente ACP de ADR-031, que no existe todavía.
+
+## Enmienda 2026-08-08: los chats se crean en la Sala, no en el admin
+
+La Consecuencia que decía *"Los chats se crean desde el admin de Django por ahora. No hay pantalla de creación: sería inventar interfaz antes de tener la conversación"* queda sin efecto.
+
+Corrección del Director: crear un chat dentro de un proyecto no es interfaz prematura, es la operación más básica de la Sala, y mandar al admin de Django para eso es un desvío que no describe el producto. `/sala/` pasa a listar los proyectos con sus chats y un formulario de alta por proyecto; la ruta del detalle pasa a `/sala/chat/<id>/`.
+
+El admin de Django queda como lo que es, un editor de base de datos: `ChatAdmin` sigue siendo de solo lectura junto a las otras cinco tablas que escribe el sistema, y `Proyecto` sigue siendo la única entidad editable ahí — coherente con que registrar un proyecto es un acto manual del Director (ADR-025 punto 5).
+
+Consecuencia sobre el modelo: `Chat.consultor_session_id` pasa a admitir vacío, porque un chat nace antes de que exista sesión de Consultor. Se llena cuando el Consultor arranque, no antes.

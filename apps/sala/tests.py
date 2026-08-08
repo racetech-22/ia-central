@@ -6,6 +6,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from apps.sala import fields
 from apps.sala.consumers import SalaConsumer
@@ -149,3 +150,68 @@ class SalaConsumerTests(TestCase):
         self.assertEqual(evento, {"tipo": "prueba", "valor": 42})
 
         await comunicador.disconnect()
+
+
+class AltaDeChatsEnLaSalaTests(TestCase):
+    """Los chats se crean dentro de la Sala, no en el admin de Django (ADR-035,
+    enmienda 2026-08-08)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.superuser = User.objects.create_user(
+            username="superuser-sala-alta", password="no-se-usa", is_superuser=True, is_staff=True
+        )
+        cls.usuario_comun = User.objects.create_user(
+            username="usuario-comun-sala-alta", password="no-se-usa"
+        )
+        cls.proyecto = Proyecto.objects.create(
+            project_key="sala-alta-test",
+            nombre="Sala alta test",
+            destino_tipo=Proyecto.DestinoTipo.NATIVO,
+        )
+
+    def test_crear_chat_crea_el_chat_y_redirige_al_detalle(self):
+        self.client.force_login(self.superuser)
+
+        resp = self.client.post(
+            reverse("crear_chat"),
+            {"proyecto_id": self.proyecto.id, "titulo": "chat nuevo"},
+        )
+
+        chat = Chat.objects.get(proyecto=self.proyecto, titulo="chat nuevo")
+        self.assertRedirects(resp, reverse("detalle_chat", args=[chat.id]))
+
+    def test_crear_chat_con_titulo_vacio_deja_consultor_session_id_vacio(self):
+        self.client.force_login(self.superuser)
+
+        self.client.post(reverse("crear_chat"), {"proyecto_id": self.proyecto.id, "titulo": ""})
+
+        chat = Chat.objects.get(proyecto=self.proyecto)
+        self.assertEqual(chat.consultor_session_id, "")
+
+    def test_crear_chat_contra_proyecto_inexistente_da_404(self):
+        self.client.force_login(self.superuser)
+
+        resp = self.client.post(reverse("crear_chat"), {"proyecto_id": 999999, "titulo": "x"})
+
+        self.assertEqual(resp.status_code, 404)
+
+    def test_usuario_sin_permiso_redirige_en_las_tres_vistas(self):
+        self.client.force_login(self.usuario_comun)
+        chat = Chat.objects.create(proyecto=self.proyecto, titulo="chat existente")
+
+        resp_sala = self.client.get(reverse("sala"))
+        resp_detalle = self.client.get(reverse("detalle_chat", args=[chat.id]))
+        resp_crear = self.client.post(
+            reverse("crear_chat"), {"proyecto_id": self.proyecto.id, "titulo": "x"}
+        )
+
+        self.assertEqual(resp_sala.status_code, 302)
+        self.assertEqual(resp_detalle.status_code, 302)
+        self.assertEqual(resp_crear.status_code, 302)
+        self.assertFalse(Chat.objects.filter(titulo="x").exists())
+
+    def test_chat_se_puede_crear_con_consultor_session_id_vacio(self):
+        chat = Chat.objects.create(proyecto=self.proyecto, titulo="sin sesion todavia")
+
+        self.assertEqual(chat.consultor_session_id, "")

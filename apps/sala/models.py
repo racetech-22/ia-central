@@ -49,7 +49,10 @@ class Chat(models.Model):
     # Antes "session_id" a secas — ambiguo desde que hay dos roles (ADR-033
     # punto 2). Es la sesión del Consultor, que sigue siendo una sola por
     # Chat (corre sobre el Claude Agent SDK vía orchestrator.run(...)).
-    consultor_session_id = models.CharField(max_length=255)
+    # Vacío al crear el chat (ADR-035, enmienda 2026-08-08): un chat nace en
+    # la Sala antes de que exista sesión de Consultor, se llena cuando el
+    # Consultor arranque, no antes.
+    consultor_session_id = models.CharField(max_length=255, blank=True)
     titulo = models.CharField(max_length=255, blank=True)
     # Elección de agente+modelo del catálogo de ADR-027, por chat y no por
     # proyecto (ADR-030 punto 1).

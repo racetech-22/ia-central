@@ -10,33 +10,58 @@
   .wrap{max-width:640px;margin:0 auto}
   h1{font-size:22px;font-weight:500;margin:0 0 .25rem}
   .meta{font-size:13px;color:#6b6862;margin:0 0 1.5rem}
-  .card{background:#fff;border:1px solid #e0ddd8;border-radius:12px;padding:1.25rem}
-  ul{list-style:none;margin:0;padding:0}
+  .proyecto{background:#fff;border:1px solid #e0ddd8;border-radius:12px;padding:1.25rem;margin:0 0 1rem}
+  .proyecto h2{font-size:16px;font-weight:500;margin:0 0 .75rem}
+  ul{list-style:none;margin:0 0 .75rem;padding:0}
   li{border-bottom:1px solid #e0ddd8;padding:.6rem 0}
   li:last-child{border-bottom:none}
   a{color:#1f5182;text-decoration:none}
   a:hover{text-decoration:underline}
   .sub{font-size:12px;color:#6b6862}
+  .vacio{font-size:13px;color:#6b6862;margin:0 0 .75rem}
+  form.alta{display:flex;gap:.5rem}
+  form.alta input[type=text]{flex:1;padding:.4rem .6rem;border:1px solid #e0ddd8;border-radius:6px;font-size:14px}
+  form.alta button{padding:.4rem .9rem;border:1px solid #7aa9d6;background:#e6f0fa;color:#1f5182;
+    border-radius:6px;font-size:14px;cursor:pointer}
+  .sin-proyectos{background:#fff;border:1px solid #e0ddd8;border-radius:12px;padding:1.25rem}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Sala — chats</h1>
-  <p class="meta">Vista andamio (ADR-035): verifica que las rutas de WebSocket funcionen de punta a punta, no es la pantalla final de la sala.</p>
-  <div class="card">
-    {% if chats %}
-    <ul>
-      {% for chat in chats %}
-      <li>
-        <a href="{% url 'detalle_chat' chat.id %}">{{ chat.titulo|default:chat.consultor_session_id|default:"(sin título)" }}</a>
-        <div class="sub">{{ chat.proyecto.nombre }} &middot; {{ chat.creado_en }}</div>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p>No hay chats todavía. Se crean desde <a href="{% url 'admin:sala_chat_changelist' %}">el admin de Django</a>.</p>
-    {% endif %}
+  <h1>Sala</h1>
+  <p class="meta">Los chats se crean acá, dentro de cada proyecto. Los proyectos se registran desde el admin de Django.</p>
+
+  {% if proyectos %}
+    {% for proyecto in proyectos %}
+    <div class="proyecto">
+      <h2>{{ proyecto.nombre }}</h2>
+      {% with chats=proyecto.chats.all %}
+        {% if chats %}
+        <ul>
+          {% for chat in chats %}
+          <li>
+            <a href="{% url 'detalle_chat' chat.id %}">{{ chat.titulo|default:"(sin título)" }}</a>
+            <div class="sub">{{ chat.creado_en }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="vacio">Este proyecto todavía no tiene chats.</p>
+        {% endif %}
+      {% endwith %}
+      <form class="alta" method="post" action="{% url 'crear_chat' %}">
+        {% csrf_token %}
+        <input type="hidden" name="proyecto_id" value="{{ proyecto.id }}">
+        <input type="text" name="titulo" placeholder="Título del chat nuevo (opcional)">
+        <button type="submit">Crear chat</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="sin-proyectos">
+    <p>No hay proyectos todavía. Se registran desde <a href="{% url 'admin:sala_proyecto_add' %}">el admin de Django</a>.</p>
   </div>
+  {% endif %}
 </div>
 </body>
 </html>

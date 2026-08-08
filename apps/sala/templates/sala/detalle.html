@@ -23,7 +23,7 @@
 <body>
 <div class="wrap">
   <h1>{{ chat.titulo|default:chat.consultor_session_id|default:"(sin título)" }}</h1>
-  <p class="meta"><a href="{% url 'lista_chats' %}">&larr; volver a la lista</a> — vista andamio (ADR-035), no la pantalla final.</p>
+  <p class="meta"><a href="{% url 'sala' %}">&larr; volver a la sala</a> — vista andamio (ADR-035), no la pantalla final.</p>
   <div class="card">
     <p>Estado del socket: <span id="estado" class="estado conectando">conectando</span></p>
     <ul id="eventos"></ul>
