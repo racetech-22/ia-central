@@ -85,12 +85,23 @@ WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
 # Servicio `redis` de docker-compose.yml — solo red interna, sin ports:
-# (ADR-025 §9.7, ADR-026). Sin websocket routes todavía (subtarea siguiente).
+# (ADR-025 §9.7, ADR-026). Rutas de websocket construidas en ADR-035.
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            # socket_timeout=None es obligatorio con redis-py>=8.0.0: esa
+            # versión cambió el default de socket_timeout a 5s, el mismo
+            # valor que channels_redis usa internamente para su BRPOP/
+            # BZPOPMIN bloqueante en receive() — el timeout de socket corta
+            # la lectura antes de que el bloqueo normal pueda resolver, y
+            # RedisChannelLayer.receive() tira redis.exceptions.TimeoutError
+            # cada ~5s en vez de esperar en silencio. Error real observado
+            # en este VPS el 2026-08-08 (ver CHANGELOG.md) y documentado en
+            # https://github.com/django/channels_redis/issues/422, con el
+            # mismo traceback exacto y este mismo fix confirmado por varios
+            # reportantes — channels_redis 4.3.0 todavía no lo aplica solo.
+            "hosts": [{"host": "redis", "port": 6379, "socket_timeout": None}],
         },
     },
 }

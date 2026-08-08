@@ -16,6 +16,7 @@
   .estado.conectando,.estado.reconectando{background:#e6f0fa;border-color:#7aa9d6;color:#1f5182}
   .estado.conectado{background:#e9f5ec;border-color:#7ab88b;color:#2c6b41}
   .estado.desconectado{background:#faeceb;border-color:#d68b7a;color:#82301f}
+  .pong{font-size:12px;color:#6b6862;margin:.4rem 0 0}
   ul{list-style:none;margin:1rem 0 0;padding:0;font-family:ui-monospace,monospace;font-size:12px}
   li{border-bottom:1px solid #eee;padding:.35rem 0;word-break:break-all}
 </style>
@@ -26,6 +27,7 @@
   <p class="meta"><a href="{% url 'sala' %}">&larr; volver a la sala</a> — vista andamio (ADR-035), no la pantalla final.</p>
   <div class="card">
     <p>Estado del socket: <span id="estado" class="estado conectando">conectando</span></p>
+    <p class="pong" id="ultimo-pong">Último pong: —</p>
     <ul id="eventos"></ul>
   </div>
 </div>
@@ -36,9 +38,18 @@
   var url = protocolo + window.location.host + "/ws/sala/" + chatId + "/";
 
   var estadoEl = document.getElementById("estado");
+  var ultimoPongEl = document.getElementById("ultimo-pong");
   var eventosEl = document.getElementById("eventos");
   var intentos = 0;
   var socket = null;
+  var heartbeatId = null;
+  // Timestamp de apertura de la conexión actual — se usa en onclose para
+  // decidir si el intento cuenta para el backoff (ADR-025 §9.5, punto A3).
+  var aperturaEn = null;
+
+  function horaActual() {
+    return new Date().toLocaleTimeString();
+  }
 
   function marcarEstado(texto, clase) {
     estadoEl.textContent = texto;
@@ -51,12 +62,32 @@
     eventosEl.prepend(li);
   }
 
+  function iniciarHeartbeat() {
+    detenerHeartbeat();
+    // Cada 20s mientras el socket está abierto (ADR-025 §9.5).
+    heartbeatId = setInterval(function () {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ tipo: "ping" }));
+      }
+    }, 20000);
+  }
+
+  function detenerHeartbeat() {
+    // Cancelado en onclose para no dejarlo corriendo sobre un socket muerto.
+    if (heartbeatId !== null) {
+      clearInterval(heartbeatId);
+      heartbeatId = null;
+    }
+  }
+
   function conectar() {
     marcarEstado(intentos === 0 ? "conectando" : "reconectando", intentos === 0 ? "conectando" : "reconectando");
     socket = new WebSocket(url);
 
     socket.onopen = function () {
-      intentos = 0;
+      aperturaEn = Date.now();
+      agregarEvento({ tipo: "apertura", hora: horaActual() });
+      iniciarHeartbeat();
     };
 
     socket.onmessage = function (evento) {
@@ -66,14 +97,39 @@
       } catch (e) {
         payload = { tipo: "error", detalle: "no se pudo interpretar el mensaje" };
       }
+
       if (payload.tipo === "conectado") {
         marcarEstado("conectado", "conectado");
       }
+
+      // Los pong no van a la lista de eventos: ensuciarían la pantalla
+      // cada 20s. Se muestran aparte, como hora del último recibido.
+      if (payload.tipo === "pong") {
+        ultimoPongEl.textContent = "Último pong: " + horaActual();
+        return;
+      }
+
       agregarEvento(payload);
     };
 
-    socket.onclose = function () {
-      marcarEstado("desconectado", "desconectado");
+    socket.onclose = function (evento) {
+      detenerHeartbeat();
+
+      // El intento solo se resetea si la conexión sobrevivió al menos 30s;
+      // si murió antes, cuenta para el backoff, que si no queda anulado
+      // (ver A3 — antes se reseteaba sin condición en onopen).
+      var sobrevivio30s = aperturaEn !== null && (Date.now() - aperturaEn) >= 30000;
+      if (sobrevivio30s) {
+        intentos = 0;
+      } else {
+        intentos += 1;
+      }
+      aperturaEn = null;
+
+      marcarEstado("desconectado (código " + evento.code + ")", "desconectado");
+      agregarEvento({ tipo: "cierre", code: evento.code, reason: evento.reason });
+      console.warn("WebSocket cerrado", evento.code, evento.reason);
+
       programarReconexion();
     };
 
@@ -83,8 +139,8 @@
   }
 
   function programarReconexion() {
-    // Backoff exponencial con tope de 60s y jitter (ADR-025 §9.5).
-    intentos += 1;
+    // Backoff exponencial con tope de 60s y jitter (ADR-025 §9.5). El
+    // contador de intentos lo actualiza onclose, no esta función.
     var base = Math.min(60000, 1000 * Math.pow(2, intentos));
     var jitter = Math.random() * base * 0.2;
     var espera = base + jitter;
