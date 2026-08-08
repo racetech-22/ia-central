@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Chat, EntradaSesion, Proyecto, SesionEjecutor, SolicitudPermiso
+from .models import (
+    ActualizacionSesion,
+    Chat,
+    EntradaSesion,
+    LlamadaHerramienta,
+    Proyecto,
+    SesionEjecutor,
+    SolicitudPermiso,
+)
 
 
 @admin.register(Proyecto)
@@ -47,8 +55,22 @@ class EntradaSesionAdmin(ReadOnlyModelAdmin):
     search_fields = ("project_key", "session_id", "uuid")
 
 
+@admin.register(ActualizacionSesion)
+class ActualizacionSesionAdmin(ReadOnlyModelAdmin):
+    list_display = ("sesion", "tipo", "recibido_en")
+    list_filter = ("tipo",)
+    search_fields = ("sesion__chat__titulo",)
+
+
+@admin.register(LlamadaHerramienta)
+class LlamadaHerramientaAdmin(ReadOnlyModelAdmin):
+    list_display = ("tool_call_id", "sesion", "kind", "estado", "actualizado_en")
+    list_filter = ("estado", "kind")
+    search_fields = ("tool_call_id", "sesion__chat__titulo")
+
+
 @admin.register(SolicitudPermiso)
 class SolicitudPermisoAdmin(ReadOnlyModelAdmin):
-    list_display = ("tool_name", "chat", "estado", "decidido_por", "creado_en")
-    list_filter = ("estado", "tool_name")
-    search_fields = ("tool_name", "request_id")
+    list_display = ("request_id", "llamada", "estado", "opcion_elegida", "decidido_por", "creado_en")
+    list_filter = ("estado",)
+    search_fields = ("request_id", "llamada__tool_call_id")

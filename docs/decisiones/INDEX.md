@@ -39,3 +39,4 @@ Manifiesto en ruta fija de los nombres de archivo reales de cada ADR — necesar
 | ADR-031 | ADR-031-ubicacion-cliente-acp.md |
 | ADR-032 | ADR-032-verificacion-arquitectura-seccion-6.md |
 | ADR-033 | ADR-033-modelo-datos-chat-consultor-ejecutor.md |
+| ADR-034 | ADR-034-historial-ejecutor-y-solicitud-permiso-acp.md |

@@ -124,6 +124,84 @@ class SesionEjecutor(models.Model):
         return f"{self.chat_id} · slot {self.slot} ({self.estado})"
 
 
+class ActualizacionSesion(models.Model):
+    """Log append-only de las notificaciones ``session/update`` del Ejecutor
+    (ADR-034 punto 1). Mismo criterio que ADR-025 punto 7 aplicó a
+    ``EntradaSesion`` para el Consultor: se persiste el ``payload`` tal cual,
+    sin inventarle un esquema de "Mensaje" a algo que el protocolo ya define.
+
+    ``tipo`` (el discriminador ``sessionUpdate``: ``tool_call``,
+    ``tool_call_update``, ``agent_message_chunk``, ``plan``,
+    ``usage_update``, etc.) es texto libre a propósito, no un
+    ``TextChoices`` — la especificación puede sumar tipos nuevos, y un tipo
+    no contemplado hoy no debe romper la ingesta.
+    """
+
+    sesion = models.ForeignKey(
+        SesionEjecutor, related_name="actualizaciones", on_delete=models.CASCADE
+    )
+    tipo = models.CharField(max_length=50)
+    payload = models.JSONField()
+    recibido_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["recibido_en"]
+        indexes = [
+            models.Index(fields=["sesion", "recibido_en"]),
+        ]
+
+    def __str__(self):
+        return f"{self.sesion_id}/{self.tipo}"
+
+
+class LlamadaHerramienta(models.Model):
+    """Proyección mutable de los tool calls del Ejecutor (ADR-034 punto 2).
+
+    Existe además de ``ActualizacionSesion`` por dos motivos verificados
+    contra ``https://agentclientprotocol.com/protocol/v1/tool-calls.md``:
+    los tool calls son mutables (``pending`` -> ``in_progress`` ->
+    ``completed``/``failed``, y "todos los campos salvo ``toolCallId`` son
+    opcionales en las actualizaciones"), y ``session/request_permission``
+    no trae los detalles de la operación, solo el ``toolCallId`` — sin esta
+    proyección no hay con qué mostrarle al Director qué está autorizando.
+    """
+
+    class Estado(models.TextChoices):
+        PENDING = "pending", "Pending"
+        IN_PROGRESS = "in_progress", "In progress"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    sesion = models.ForeignKey(
+        SesionEjecutor, related_name="llamadas", on_delete=models.CASCADE
+    )
+    tool_call_id = models.CharField(max_length=255)
+    title = models.TextField(blank=True)
+    # read/edit/delete/move/search/execute/think/fetch/other.
+    kind = models.CharField(max_length=20, blank=True)
+    estado = models.CharField(
+        max_length=20, choices=Estado.choices, default=Estado.PENDING
+    )
+    raw_input = models.JSONField(null=True, blank=True)
+    raw_output = models.JSONField(null=True, blank=True)
+    content = models.JSONField(null=True, blank=True)
+    locations = models.JSONField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["creado_en"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sesion", "tool_call_id"],
+                name="tool_call_unico_por_sesion",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.tool_call_id} ({self.estado})"
+
+
 class EntradaSesion(models.Model):
     """Tabla espejo del ``SessionStore`` del SDK (ADR-025 punto 7) — historial
     del Consultor únicamente, que sigue corriendo sobre el Claude Agent SDK
@@ -158,36 +236,45 @@ class EntradaSesion(models.Model):
 
 
 class SolicitudPermiso(models.Model):
-    """Puente de ``can_use_tool`` (ADR-025 punto 1) — no viene del SDK.
+    """Puente de ``session/request_permission`` (ADR-034 punto 3) —
+    reescrita sobre ACP v1, no sobre ``ToolPermissionContext`` del SDK.
 
-    Sin tocar por ADR-033 a propósito: sus campos (``title``/``display_name``/
-    ``description``/``agent_id``) vienen de ``ToolPermissionContext`` del SDK,
-    que la enmienda 2026-08-06 a ADR-025 da de baja para ACP v1. El rediseño
-    sobre los campos reales de ``session/request_permission`` v1 es la
-    decisión abierta ``esquema_solicitud_permiso_v1``, todavía sin resolver
-    — se deja marcado en vez de tocarlo a medias.
+    ACP no devuelve aprobado/denegado: devuelve la elección de una opción
+    (verbatim, ``https://agentclientprotocol.com/protocol/v1/tool-calls.md``:
+    ``{"outcome": {"outcome": "selected", "optionId": "allow-once"}}``), o
+    ``cancelled``. Por eso se guardan las ``opciones`` que ofreció el agente
+    tal como llegaron y la ``opcion_elegida``, en vez de un booleano.
+
+    ``cancelada`` y ``caducada`` son causas distintas, no sinónimos: el
+    protocolo obliga a responder ``cancelled`` a todo permiso pendiente al
+    cancelar un turno (verbatim: *"The Client MUST respond to all pending
+    session/request_permission requests with the cancelled outcome"*), lo
+    que no es lo mismo que un timeout (ADR-025 §9.4) o el reciclado del
+    Ejecutor (ADR-030). ``motivo_cierre`` existe para que el Director vea
+    la causa real en vez de encontrarse con una solicitud zombi.
     """
 
     class Estado(models.TextChoices):
         PENDIENTE = "pendiente", "Pendiente"
-        APROBADO = "aprobado", "Aprobado"
-        DENEGADO = "denegado", "Denegado"
-        CADUCADO = "caducado", "Caducado"
+        RESPONDIDA = "respondida", "Respondida"
+        CADUCADA = "caducada", "Caducada"
+        CANCELADA = "cancelada", "Cancelada"
 
-    chat = models.ForeignKey(
-        Chat, related_name="solicitudes_permiso", on_delete=models.CASCADE
+    # Sobre la llamada concreta que se autoriza, no sobre el Chat — el
+    # detalle de la operación (title/kind/content) vive en LlamadaHerramienta,
+    # porque session/request_permission solo trae el toolCallId.
+    llamada = models.ForeignKey(
+        LlamadaHerramienta, related_name="solicitudes", on_delete=models.CASCADE
     )
     request_id = models.CharField(max_length=64, unique=True)
-    tool_name = models.CharField(max_length=255)
-    tool_input = models.JSONField()
-    # Nombres calcados de ToolPermissionContext (SDK), no traducidos.
-    title = models.TextField(blank=True)
-    display_name = models.CharField(max_length=255, blank=True)
-    description = models.TextField(blank=True)
-    agent_id = models.CharField(max_length=255, blank=True, null=True)
+    # Lista de PermissionOption (optionId/name/kind) tal como la ofreció el
+    # agente, guardada sin reinterpretar.
+    opciones = models.JSONField()
     estado = models.CharField(
         max_length=20, choices=Estado.choices, default=Estado.PENDIENTE
     )
+    opcion_elegida = models.CharField(max_length=255, blank=True)
+    motivo_cierre = models.TextField(blank=True)
     decidido_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL
     )
@@ -198,4 +285,4 @@ class SolicitudPermiso(models.Model):
         ordering = ["-creado_en"]
 
     def __str__(self):
-        return f"{self.tool_name} ({self.estado})"
+        return f"{self.request_id} ({self.estado})"
